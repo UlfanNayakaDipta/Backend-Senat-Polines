@@ -7,7 +7,7 @@ use App\Models\StrukturOrganisasi;
 class StrukturOrganisasiController extends CrudController
 {
     protected string $model = StrukturOrganisasi::class;
-    protected array $with = ['enrollment.user'];
+    protected array $with = ['enrollment.user', 'enrollment.komisi'];
 
     protected function rules(?int $id = null): array
     {
