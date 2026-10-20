@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+error_reporting(E_ALL & ~E_DEPRECATED);
+
 use Symfony\Component\Console\Input\ArgvInput;
 
 define('LARAVEL_START', microtime(true));
