@@ -11,10 +11,10 @@ class UserSeeder extends Seeder
     {
         $users = [
             ['nim_nip' => 'admin', 'nama' => 'Administrator', 'email' => 'admin@senat.test', 'role' => 'admin'],
-            ['nim_nip' => '2021001', 'nama' => 'Ketua Senat', 'email' => 'ketua@senat.test', 'role' => 'anggota'],
-            ['nim_nip' => '2021002', 'nama' => 'Sekretaris Senat', 'email' => 'sekretaris@senat.test', 'role' => 'anggota'],
-            ['nim_nip' => '2021003', 'nama' => 'Anggota Satu', 'email' => 'anggota1@senat.test', 'role' => 'anggota'],
-            ['nim_nip' => '2021004', 'nama' => 'Anggota Dua', 'email' => 'anggota2@senat.test', 'role' => 'anggota'],
+            ['nim_nip' => '2021001', 'nama' => 'Dr. Sukamto., S.Kom., M.T', 'email' => 'ketua@senat.test', 'role' => 'anggota'],
+            ['nim_nip' => '2021002', 'nama' => 'Andi Setyawan., S.E., M.M', 'email' => 'sekretaris@senat.test', 'role' => 'anggota'],
+            ['nim_nip' => '2021003', 'nama' => 'Anis Roihatin, S.T., M.T.', 'email' => 'anggota1@senat.test', 'role' => 'anggota'],
+            ['nim_nip' => '2021004', 'nama' => 'Fajar Surya Herlambang, S.T., M.T.', 'email' => 'anggota2@senat.test', 'role' => 'anggota'],
         ];
 
         foreach ($users as $u) {
