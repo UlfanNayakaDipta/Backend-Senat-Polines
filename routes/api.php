@@ -44,4 +44,7 @@ Route::group([], function () {
     Route::apiResource('peraturan', PeraturanController::class);
     Route::apiResource('berita', BeritaController::class);
     Route::apiResource('user', UserController::class);
+
+    // AI Chatbot Aspirasi & Layanan Informasi Senat
+    Route::post('chatbot/chat', [\App\Http\Controllers\ChatbotController::class, 'chat']);
 });
