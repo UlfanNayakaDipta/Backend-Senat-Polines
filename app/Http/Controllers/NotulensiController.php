@@ -16,6 +16,7 @@ class NotulensiController extends CrudController
             'id_user' => ['required', 'exists:users,id_user'],
             'isi_notulensi' => ['required', 'string'],
             'file_risalah' => ['nullable', 'string', 'max:500'],
+            'status' => ['nullable', 'string', 'in:draf,review,disahkan,Draf,Review,Disahkan'],
             'tanggal_dibuat' => ['nullable', 'date'],
         ];
     }
@@ -27,6 +28,10 @@ class NotulensiController extends CrudController
 
         if ($request->filled('id_rapat')) {
             $query->where('id_rapat', $request->query('id_rapat'));
+        }
+
+        if ($request->filled('status') && $request->query('status') !== 'all') {
+            $query->where('status', strtolower($request->query('status')));
         }
 
         if ($request->filled('search')) {
