@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             MasterSeeder::class,
             RapatSeeder::class,
             VotingSeeder::class,
+            RapatNotulensiSeeder::class,
         ]);
     }
 }
