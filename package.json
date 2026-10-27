@@ -1,0 +1,21 @@
+{
+  "name": "backend-senat-polines",
+  "version": "1.0.0",
+  "description": "Laravel 11 REST API dan schema database untuk Portal Senat Akademik POLINES. Arsip ini dipisahkan dari repository frontend `senat-polines` pada commit sumber `a4d12cd`.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UlfanNayakaDipta/Backend-Senat-Polines.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/UlfanNayakaDipta/Backend-Senat-Polines/issues"
+  },
+  "homepage": "https://github.com/UlfanNayakaDipta/Backend-Senat-Polines#readme"
+}

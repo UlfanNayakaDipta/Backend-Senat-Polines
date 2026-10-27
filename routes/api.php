@@ -28,6 +28,9 @@ use App\Http\Controllers\RapatLampiranController;
 use App\Http\Controllers\RapatBerbagiController;
 use App\Http\Controllers\RapatRekamanController;
 
+// Endpoint Publik untuk Frontend
+Route::get('committees', [KomisiController::class, 'publicCommittees']);
+
 // Tambahkan middleware auth (mis. 'auth:sanctum') sesuai kebutuhan
 Route::group([], function () {
     // Autentikasi Pengguna
