@@ -22,6 +22,9 @@ use App\Http\Controllers\PeraturanController;
 use App\Http\Controllers\BeritaController;
 use App\Http\Controllers\UserController;
 
+// Endpoint Publik untuk Frontend
+Route::get('committees', [KomisiController::class, 'publicCommittees']);
+
 // Tambahkan middleware auth (mis. 'auth:sanctum') sesuai kebutuhan
 Route::group([], function () {
     Route::apiResource('periode-senat', PeriodeSenatController::class);
