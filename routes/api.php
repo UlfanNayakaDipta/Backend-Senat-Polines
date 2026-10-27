@@ -24,6 +24,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PresensiRapatController;
 
+// Endpoint Publik untuk Frontend
+Route::get('committees', [KomisiController::class, 'publicCommittees']);
+
 // Tambahkan middleware auth (mis. 'auth:sanctum') sesuai kebutuhan
 Route::group([], function () {
     // Autentikasi Pengguna
