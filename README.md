@@ -1,49 +1,83 @@
-# Senat POLINES API
+# Senat POLINES Backend API (Laravel 13)
 
-Laravel 11 REST API dan schema database untuk Portal Senat Akademik POLINES. Arsip ini dipisahkan dari repository frontend `senat-polines` pada commit sumber `a4d12cd`.
+Headless REST API dan arsitektur basis data relasional untuk **Portal Senat Akademik Politeknik Negeri Semarang (POLINES)**. Repositori ini berfungsi sebagai penyedia data terpusat (*Central Data & Business Logic Provider*) yang melayani antarmuka frontend reactive `senat-polines` (Laravel 13 + Livewire 4).
 
-## Cakupan
+## 🚀 Cakupan Sistem
 
-- 20 Eloquent model, migration, factory, dan seeder.
-- 20 REST resource di bawah prefix `/api`, mencakup periode senat, komisi, anggota, aspirasi, kegiatan, rapat, notulensi, voting, peraturan, berita, dan user.
-- Endpoint belum memakai authentication, authorization, atau policy. Tambahkan sebelum API diakses dari jaringan publik.
+- **Framework:** Laravel 13.x (PHP ^8.3).
+- **Arsitektur:** Headless Decoupled RESTful API (JSON output agnostik).
+- **Skema Database:** 22 Migration & Model Eloquent terindeks (User, Role, Rapat, Anggota Rapat, Presensi QR, Notulensi, Rekomendasi Keputusan, Voting, Opsi Voting, Suara Voting, Aspirasi, Tanggapan, Peraturan, Berita, dll).
+- **Keamanan & Autentikasi:** API Auth dengan auto-hash password, integrasi token sesi, dan transaksi database ACID pada pencatatan suara (*voting integrity*).
+- **Dokumentasi API:** Terintegrasi interaktif OpenAPI / Swagger UI via `darkaonline/l5-swagger`.
 
-## Prasyarat
+## 📋 Prasyarat Sistem
 
-- PHP >= 8.2 beserta ekstensi database MySQL/PDO.
-- Composer.
-- MySQL/MariaDB.
+- **PHP:** >= 8.3 (Direkomendasikan PHP 8.3 - 8.5) beserta ekstensi: `pdo`, `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`.
+- **Composer:** >= 2.2
+- **Basis Data:** MySQL 8.0+ / MariaDB 10.4+ (XAMPP / Standalone)
 
-## Menjalankan
+## 🛠️ Panduan Instalasi & Menjalankan
 
+### 1. Kloning & Pemasangan Dependensi
 ```bash
+git clone https://github.com/UlfanNayakaDipta/Backend-Senat-Polines.git
+cd Backend-Senat-Polines
 composer install
+```
+
+### 2. Konfigurasi Environment
+Salin berkas konfigurasi `.env.example` ke `.env`:
+```bash
 cp .env.example .env
 ```
-
-Atur `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, dan `DB_PASSWORD` pada `.env`. Lalu:
-
-```bash
-php artisan key:generate
-mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
-php artisan migrate --seed
-php artisan serve --port=3000
+Sesuaikan kredensial basis data pada `.env`:
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=senat_polines
+DB_USERNAME=root
+DB_PASSWORD=
 ```
 
-API tersedia pada `http://127.0.0.1:3000/api`.
+### 3. Generate App Key & Migrasi Basis Data
+```bash
+php artisan key:generate
+php artisan migrate --seed
+```
 
-## Dokumentasi API (Swagger UI / OpenAPI)
+### 4. Menjalankan Server API
+Jalankan server pada **Port 8001** (standar integrasi frontend):
+```bash
+php artisan serve --port=8001
+```
+Layanan REST API dapat diakses pada: `http://127.0.0.1:8001/api`
 
-Dokumentasi interaktif OpenAPI / Swagger UI telah dikonfigurasi menggunakan `darkaonline/l5-swagger`:
-- **Swagger UI**: [http://127.0.0.1:3000/api/documentation](http://127.0.0.1:3000/api/documentation)
-- **OpenAPI JSON Spec**: [http://127.0.0.1:3000/docs](http://127.0.0.1:3000/docs)
+---
 
-Untuk meregenerasi OpenAPI spec secara manual:
+## 📖 Dokumentasi API Interaktif (OpenAPI / Swagger)
+
+Dokumentasi endpoint lengkap, skema parameter request, dan format respons JSON dapat diuji langsung melalui antarmuka Swagger:
+- **Swagger UI Interactive:** [http://127.0.0.1:8001/api/documentation](http://127.0.0.1:8001/api/documentation)
+- **OpenAPI JSON Spec:** [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
+
+Untuk meregenerasi berkas OpenAPI spec secara manual:
 ```bash
 php artisan l5-swagger:generate
 ```
-*(Catatan: Mode otomatis telah aktif melalui `L5_SWAGGER_GENERATE_ALWAYS=true` pada `.env`)*
 
-## Handoff
+---
 
-Frontend Blade, asset, controller portal, route web, repository mock JSON, Tailwind, Alpine, dan tooling Vite tidak termasuk dalam arsip ini.
+## 🧪 Pengujian Otomatis (Automated Testing)
+
+Jalankan rangkaian unit & feature test menggunakan PHPUnit:
+```bash
+./vendor/bin/phpunit
+```
+
+---
+
+## 👥 Tim Pengembang
+
+- **Ketua & Koordinasi:** Senat Akademik POLINES IT Team
+- **Frontend Repository:** [xrodwell/senat-polines](https://github.com/xrodwell/senat-polines)
