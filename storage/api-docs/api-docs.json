@@ -1,0 +1,1545 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Senat Akademik POLINES - REST API Documentation",
+        "description": "Dokumentasi API Portal Resmi Senat Akademik Politeknik Negeri Semarang (Polines). Menyediakan endpoint presensi QR real-time, kuorum sidang, aspirasi digital, AI chatbot, manajemen kegiatan, rapat, dan tata kelola akademik.",
+        "contact": {
+            "name": "Sekretariat Senat Akademik POLINES",
+            "url": "https://www.polines.ac.id",
+            "email": "senat@polines.ac.id"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:3000/api",
+            "description": "Backend API Server (Port 3000)"
+        },
+        {
+            "url": "http://127.0.0.1:8000/api",
+            "description": "Alternative Backend Server (Port 8000)"
+        }
+    ],
+    "paths": {
+        "/aspirasi": {
+            "get": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Daftar Aspirasi Sivitas Akademika",
+                "operationId": "cf9de2f4ba423cb1196ae4a67b9d292a",
+                "responses": {
+                    "200": {
+                        "description": "Daftar aspirasi terpaginasi"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Kirim Aspirasi Baru",
+                "operationId": "b4d4160e244c85e5ecaf0b4cacbe9067",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_user",
+                                    "id_kategori",
+                                    "isi_aspirasi"
+                                ],
+                                "properties": {
+                                    "id_user": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_kategori": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "isi_aspirasi": {
+                                        "type": "string",
+                                        "example": "Pengusulan penambahan fasilitas hotspot wifi di laboratorium gedung Elektro."
+                                    },
+                                    "lampiran": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "Menunggu"
+                                    },
+                                    "anonim": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Aspirasi berhasil dikirimkan"
+                    },
+                    "422": {
+                        "description": "Validasi data gagal"
+                    }
+                }
+            }
+        },
+        "/aspirasi/{id}": {
+            "get": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Detail Aspirasi",
+                "operationId": "772e98e96b114295e9ae9c696f17d18e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail aspirasi beserta tanggapan"
+                    },
+                    "404": {
+                        "description": "Aspirasi tidak ditemukan"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Perbarui Status/Isi Aspirasi",
+                "operationId": "9f61100bef6f51edefab386ee3637495",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "Diproses"
+                                    },
+                                    "isi_aspirasi": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Aspirasi berhasil diperbarui"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Hapus Aspirasi",
+                "operationId": "73456f21cb5c2b8dbe5c4a839e4ee42f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Aspirasi berhasil dihapus"
+                    }
+                }
+            }
+        },
+        "/berita": {
+            "get": {
+                "tags": [
+                    "Berita"
+                ],
+                "summary": "Daftar Berita Senat Akademik",
+                "operationId": "3241ea10acb4c989eeaf0ff6323111b8",
+                "responses": {
+                    "200": {
+                        "description": "Daftar berita terpaginasi"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Berita"
+                ],
+                "summary": "Publikasi Berita Baru",
+                "operationId": "e28b7e68665fa00368adea84ab95d0c8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_user",
+                                    "judul",
+                                    "isi"
+                                ],
+                                "properties": {
+                                    "id_user": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "judul": {
+                                        "type": "string",
+                                        "example": "Sosialisasi Kebijakan Baru Kurikulum Terapan Polines"
+                                    },
+                                    "isi": {
+                                        "type": "string",
+                                        "example": "Senat Akademik menyelenggarakan sosialisasi kebijakan penyesuaian kurikulum..."
+                                    },
+                                    "gambar": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "tanggal_publish": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-10-28"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Berita berhasil dipublikasikan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                }
+            }
+        },
+        "/berita/{id}": {
+            "get": {
+                "tags": [
+                    "Berita"
+                ],
+                "summary": "Detail Berita",
+                "operationId": "a3b233b4a7bbaed44aa5880377fa2527",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail berita"
+                    },
+                    "404": {
+                        "description": "Berita tidak ditemukan"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Berita"
+                ],
+                "summary": "Perbarui Berita",
+                "operationId": "47f98810c40ccbd8331b573e5df668fb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "judul": {
+                                        "type": "string"
+                                    },
+                                    "isi": {
+                                        "type": "string"
+                                    },
+                                    "gambar": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Berita berhasil diperbarui"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Berita"
+                ],
+                "summary": "Hapus Berita",
+                "operationId": "d6dfb6789d2322ec779be7ad7f8d1459",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Berita berhasil dihapus"
+                    }
+                }
+            }
+        },
+        "/chatbot/chat": {
+            "post": {
+                "tags": [
+                    "AI Chatbot"
+                ],
+                "summary": "Kirim pesan percakapan ke AI Chatbot Senat",
+                "description": "Memproses pesan dari sivitas akademika dan menghasilkan jawaban cerdas terkait regulasi, agenda rapat, dan informasi Senat Polines.",
+                "operationId": "9dae8b7907d593033de928ec6e6e6233",
+                "requestBody": {
+                    "description": "Pesan pertanyaan dan riwayat percakapan sebelumnya",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "message"
+                                ],
+                                "properties": {
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Bagaimana prosedur pengajuan aspirasi ke Senat Polines?"
+                                    },
+                                    "history": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "role": "user",
+                                                "content": "Halo AI Senat"
+                                            },
+                                            {
+                                                "role": "assistant",
+                                                "content": "Halo! Ada yang bisa saya bantu terkait Senat Akademik Polines?"
+                                            }
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Respon dari AI Chatbot berhasil dihasilkan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "reply": {
+                                                    "type": "string",
+                                                    "example": "Aspirasi dapat diajukan melalui portal web resmi pada menu Aspirasi sivitas."
+                                                },
+                                                "source": {
+                                                    "type": "string",
+                                                    "example": "Tata Tertib Senat Akademik"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi input gagal"
+                    }
+                }
+            }
+        },
+        "/peraturan": {
+            "get": {
+                "tags": [
+                    "Peraturan & Dokumen"
+                ],
+                "summary": "Daftar Peraturan & Dokumen Senat",
+                "operationId": "5fea5aa2539ef4a32f42487460593478",
+                "responses": {
+                    "200": {
+                        "description": "Daftar peraturan terpaginasi"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Peraturan & Dokumen"
+                ],
+                "summary": "Tambah Dokumen Peraturan Baru",
+                "operationId": "f5deeece370a991894ebd19d0761bf96",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_periode_senat",
+                                    "nomor_sk",
+                                    "judul",
+                                    "kategori",
+                                    "tahap_pembentukan",
+                                    "tanggal_terbit"
+                                ],
+                                "properties": {
+                                    "id_periode_senat": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "nomor_sk": {
+                                        "type": "string",
+                                        "example": "SK/SENAT-POLINES/2026/012"
+                                    },
+                                    "judul": {
+                                        "type": "string",
+                                        "example": "Peraturan Tata Tertib Sidang dan Pengambilan Keputusan Senat"
+                                    },
+                                    "kategori": {
+                                        "type": "string",
+                                        "example": "Tata Tertib"
+                                    },
+                                    "tahap_pembentukan": {
+                                        "type": "string",
+                                        "example": "Disahkan"
+                                    },
+                                    "file_dokumen": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "tanggal_terbit": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-05-10"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Peraturan berhasil disimpan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                }
+            }
+        },
+        "/peraturan/{id}": {
+            "get": {
+                "tags": [
+                    "Peraturan & Dokumen"
+                ],
+                "summary": "Detail Dokumen Peraturan",
+                "operationId": "c0fd0b4b707d5e54b6dd4ce93f468745",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail peraturan"
+                    },
+                    "404": {
+                        "description": "Peraturan tidak ditemukan"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Peraturan & Dokumen"
+                ],
+                "summary": "Perbarui Dokumen Peraturan",
+                "operationId": "5a00ea16762f20111887fe99269fc576",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "judul": {
+                                        "type": "string"
+                                    },
+                                    "nomor_sk": {
+                                        "type": "string"
+                                    },
+                                    "tahap_pembentukan": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Peraturan berhasil diperbarui"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Peraturan & Dokumen"
+                ],
+                "summary": "Hapus Peraturan",
+                "operationId": "053fe0d280984150126806209ece991d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Peraturan berhasil dihapus"
+                    }
+                }
+            }
+        },
+        "/rapat/active": {
+            "get": {
+                "tags": [
+                    "Presensi Rapat"
+                ],
+                "summary": "Ambil agenda sidang atau rapat senat yang aktif",
+                "description": "Mengambil data agenda rapat yang sedang berlangsung atau dijadwalkan hari ini beserta status kuorum dan QR presensi.",
+                "operationId": "036a9e80f8d46df0c1d697e48a00eca4",
+                "responses": {
+                    "200": {
+                        "description": "Data rapat aktif berhasil dimuat"
+                    },
+                    "404": {
+                        "description": "Tidak ada agenda sidang/rapat yang aktif"
+                    }
+                }
+            }
+        },
+        "/rapat/{id}/generate-qr": {
+            "post": {
+                "tags": [
+                    "Presensi Rapat"
+                ],
+                "summary": "Generate QR Code & Kode Sesi Presensi Rapat",
+                "description": "Membuka gerbang presensi rapat dan menghasilkan token QR dinamis serta kode sesi presensi 6 digit.",
+                "operationId": "ee9f35002b7179afef13138181ab2cb7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID Rapat",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "QR presensi dan kode sesi berhasil diaktifkan"
+                    },
+                    "404": {
+                        "description": "Data rapat tidak ditemukan"
+                    }
+                }
+            }
+        },
+        "/rapat/{id}/freeze-presensi": {
+            "post": {
+                "tags": [
+                    "Presensi Rapat"
+                ],
+                "summary": "Bekukan Presensi dan Kunci Status Kuorum Sidang",
+                "description": "Menutup sesi presensi sehingga QR Code kedaluwarsa dan status kuorum terkunci.",
+                "operationId": "803e989a166d84c04c9b754c022268a8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID Rapat",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sesi presensi telah dibekukan"
+                    },
+                    "404": {
+                        "description": "Data rapat tidak ditemukan"
+                    }
+                }
+            }
+        },
+        "/rapat/presensi": {
+            "post": {
+                "tags": [
+                    "Presensi Rapat"
+                ],
+                "summary": "Submit Presensi Kehadiran Anggota Senat",
+                "description": "Mencatat kehadiran anggota senat melalui pemindaian QR code atau input kode sesi.",
+                "operationId": "3fe760f427abba6137a6859446c36b76",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_user"
+                                ],
+                                "properties": {
+                                    "id_user": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "token_qr": {
+                                        "type": "string",
+                                        "example": "token-polines-rapat-xyz123"
+                                    },
+                                    "kode_sesi": {
+                                        "type": "string",
+                                        "example": "PLN-789"
+                                    },
+                                    "id_rapat": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Presensi berhasil dicatat"
+                    },
+                    "422": {
+                        "description": "Validasi gagal atau presensi sudah ditutup"
+                    },
+                    "404": {
+                        "description": "Token QR / Sesi tidak ditemukan"
+                    }
+                }
+            }
+        },
+        "/rapat/{id}/live-attendance": {
+            "get": {
+                "tags": [
+                    "Presensi Rapat"
+                ],
+                "summary": "Monitor Kehadiran Sidang dan Kuorum Real-time",
+                "description": "Mengambil daftar anggota rapat beserta status kehadiran (hadir/izin/menunggu), waktu scan, dan persentase kuorum.",
+                "operationId": "385064475d3e26b44714d2694e4f8dab",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID Rapat",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar kehadiran real-time"
+                    },
+                    "404": {
+                        "description": "Data rapat tidak ditemukan"
+                    }
+                }
+            }
+        },
+        "/rapat/{id}/anggota/{id_user}/validasi": {
+            "put": {
+                "tags": [
+                    "Presensi Rapat"
+                ],
+                "summary": "Validasi Manual Kehadiran Anggota oleh Admin/Sekretariat",
+                "description": "Mengubah status presensi anggota secara manual disertai catatan resmi admin.",
+                "operationId": "e1f085342213cf8fe12a837e841407b2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID Rapat",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "id_user",
+                        "in": "path",
+                        "description": "ID Pengguna / Anggota Senat",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status_kehadiran"
+                                ],
+                                "properties": {
+                                    "status_kehadiran": {
+                                        "type": "string",
+                                        "example": "hadir",
+                                        "enum": [
+                                            "hadir",
+                                            "izin",
+                                            "tidak_hadir",
+                                            "menunggu"
+                                        ]
+                                    },
+                                    "catatan": {
+                                        "type": "string",
+                                        "example": "Hadir langsung di ruang sidang lantai 2"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status kehadiran berhasil divalidasi manual"
+                    },
+                    "422": {
+                        "description": "Status kehadiran tidak valid"
+                    },
+                    "404": {
+                        "description": "Rapat atau anggota tidak ditemukan"
+                    }
+                }
+            }
+        },
+        "/rapat": {
+            "get": {
+                "tags": [
+                    "Rapat & Sidang"
+                ],
+                "summary": "Daftar Agenda Rapat & Sidang Senat",
+                "operationId": "f1d6dc9ef25babc2d882577a38fbc1f8",
+                "responses": {
+                    "200": {
+                        "description": "Daftar data rapat terpaginasi"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Rapat & Sidang"
+                ],
+                "summary": "Tambah Agenda Rapat Baru",
+                "operationId": "e37f873213202cd691e8e0b030279096",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_user",
+                                    "id_jenis_rapat",
+                                    "nama_agenda",
+                                    "tanggal",
+                                    "waktu",
+                                    "tempat"
+                                ],
+                                "properties": {
+                                    "id_kegiatan": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "id_user": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_jenis_rapat": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "nama_agenda": {
+                                        "type": "string",
+                                        "example": "Rapat Pleno Senat Penetapan Kalender Akademik"
+                                    },
+                                    "tanggal": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-11-01"
+                                    },
+                                    "waktu": {
+                                        "type": "string",
+                                        "example": "09:00"
+                                    },
+                                    "tempat": {
+                                        "type": "string",
+                                        "example": "Ruang Sidang Direksi Lt. 2"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "Terjadwal"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Rapat berhasil dibuat"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                }
+            }
+        },
+        "/rapat/{id}": {
+            "get": {
+                "tags": [
+                    "Rapat & Sidang"
+                ],
+                "summary": "Detail Agenda Rapat",
+                "operationId": "606bc958db03ffe3b0043a5b7b2f9753",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail data rapat"
+                    },
+                    "404": {
+                        "description": "Data tidak ditemukan"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Rapat & Sidang"
+                ],
+                "summary": "Perbarui Agenda Rapat",
+                "operationId": "cfead294eae9dfd72d56d6bcdf6932d7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "nama_agenda": {
+                                        "type": "string"
+                                    },
+                                    "tanggal": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "waktu": {
+                                        "type": "string"
+                                    },
+                                    "tempat": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rapat berhasil diperbarui"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Rapat & Sidang"
+                ],
+                "summary": "Hapus Agenda Rapat",
+                "operationId": "ccd15e0542bd4fe9f4cd806c277c6e49",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Rapat berhasil dihapus"
+                    }
+                }
+            }
+        },
+        "/suara-voting": {
+            "get": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Daftar Suara Masuk (E-Voting)",
+                "operationId": "8270b8fd8134ef15e91fd8b6cb49b7c7",
+                "responses": {
+                    "200": {
+                        "description": "Daftar perolehan suara terpaginasi"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Submit Suara E-Voting Sidang Senat",
+                "description": "Mencatat pilihan suara anggota senat pada sesi voting yang aktif (satu anggota satu suara).",
+                "operationId": "052e1b874fd1e65117c0669c477607cd",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_voting",
+                                    "id_opsi"
+                                ],
+                                "properties": {
+                                    "id_voting": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_opsi": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_user": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Suara berhasil disimpan dan rekapitulasi diperbarui"
+                    },
+                    "422": {
+                        "description": "Voting belum dibuka, sudah memberikan suara, atau opsi tidak valid"
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Daftar Pengguna / Anggota Senat & Sivitas",
+                "operationId": "23679253d16f34d2972249751e3631dd",
+                "responses": {
+                    "200": {
+                        "description": "Daftar user terpaginasi"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Tambah Pengguna Baru",
+                "operationId": "ce3cf31668a69eb39e5e98738715afa1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "nim_nip",
+                                    "nama",
+                                    "email",
+                                    "password",
+                                    "role"
+                                ],
+                                "properties": {
+                                    "nim_nip": {
+                                        "type": "string",
+                                        "example": "197508121999031002"
+                                    },
+                                    "nama": {
+                                        "type": "string",
+                                        "example": "Prof. Dr. Ir. Budi Santoso, M.T."
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "budi.santoso@polines.ac.id"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "example": "anggota",
+                                        "enum": [
+                                            "admin",
+                                            "ketua_senat",
+                                            "sekretaris",
+                                            "anggota",
+                                            "mahasiswa",
+                                            "dosen"
+                                        ]
+                                    },
+                                    "foto_profil": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pengguna berhasil dibuat"
+                    },
+                    "422": {
+                        "description": "Validasi data pengguna gagal"
+                    }
+                }
+            }
+        },
+        "/user/{id}": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Detail Pengguna",
+                "operationId": "1ec60d4ee968175164a94c21f897f8ea",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail pengguna"
+                    },
+                    "404": {
+                        "description": "Pengguna tidak ditemukan"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Perbarui Data Pengguna",
+                "operationId": "786a794071cb7098f55a4a4911e7d3f0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "nama": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "role": {
+                                        "type": "string"
+                                    },
+                                    "foto_profil": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pengguna berhasil diperbarui"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Hapus Pengguna",
+                "operationId": "a56b12a3694a926699892056cdcf8a9e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Pengguna berhasil dihapus"
+                    }
+                }
+            }
+        },
+        "/voting": {
+            "get": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Daftar Sesi E-Voting Sidang Senat",
+                "description": "Mengambil daftar sesi pemungutan suara (e-voting) rapat senat beserta jumlah suara.",
+                "operationId": "a34c1a57969f09aaab38b1766ba74656",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "dibuka",
+                                "ditutup"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "active",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar voting terpaginasi"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Buat Sesi E-Voting Baru",
+                "description": "Membuat agenda pemungutan suara sidang senat beserta opsi pilihan (default: Setuju, Tidak Setuju, Abstain).",
+                "operationId": "2b9e145effc05e5aa722ccd012bbdd82",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_rapat",
+                                    "judul_voting"
+                                ],
+                                "properties": {
+                                    "id_rapat": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "judul_voting": {
+                                        "type": "string",
+                                        "example": "Persetujuan Pembukaan Program Studi Magister Terapan Rekayasa Komputer"
+                                    },
+                                    "deskripsi": {
+                                        "type": "string",
+                                        "example": "Pemungutan suara tertutup oleh anggota senat akademik."
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "draft",
+                                        "enum": [
+                                            "draft",
+                                            "dibuka",
+                                            "ditutup"
+                                        ]
+                                    },
+                                    "opsi": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Setuju",
+                                            "Tidak Setuju",
+                                            "Abstain"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Sesi voting berhasil dibuat"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                }
+            }
+        },
+        "/voting/{id}/buka": {
+            "post": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Buka Sesi Pemungutan Suara",
+                "description": "Mengubah status voting menjadi dibuka sehingga anggota senat dapat memberikan suara.",
+                "operationId": "ef6402f55d5b9cc411be65191b1920f8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sesi voting berhasil dibuka"
+                    }
+                }
+            }
+        },
+        "/voting/{id}/tutup": {
+            "post": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Tutup Sesi Pemungutan Suara",
+                "description": "Menutup sesi voting sidang senat sehingga tidak menerima suara baru.",
+                "operationId": "4f819eb6c9247ea6279b6da578586339",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sesi voting berhasil ditutup"
+                    }
+                }
+            }
+        },
+        "/voting/{id}/rekap": {
+            "get": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Rekapitulasi Hasil E-Voting & Status Kuorum Sidang",
+                "description": "Menampilkan ringkasan perolehan suara per opsi, persentase kehadiran kuorum, dan hasil keputusan sidang.",
+                "operationId": "385fcc16d6511d37c18d49f93c37d368",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hasil rekapitulasi voting dan keputusan sidang"
+                    }
+                }
+            }
+        },
+        "/voting/{id}": {
+            "get": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Detail Sesi Voting",
+                "operationId": "b468c1d088abad58a5d9bdd38c40bbe2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail data sesi voting"
+                    },
+                    "404": {
+                        "description": "Data tidak ditemukan"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Perbarui Sesi Voting",
+                "operationId": "88741ee83312e22f8d4e02cfd2aa3770",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "judul_voting": {
+                                        "type": "string"
+                                    },
+                                    "deskripsi": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "draft",
+                                            "dibuka",
+                                            "ditutup"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Data voting berhasil diperbarui"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Voting"
+                ],
+                "summary": "Hapus Sesi Voting",
+                "operationId": "7a385705160371cd8e4768065f02ee28",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Voting berhasil dihapus"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Presensi Rapat",
+            "description": "Sistem Presensi QR Code & Monitoring Kuorum Sidang Real-time"
+        },
+        {
+            "name": "Rapat & Sidang",
+            "description": "Manajemen Agenda Rapat dan Sidang Senat"
+        },
+        {
+            "name": "AI Chatbot",
+            "description": "Layanan Tanya-Jawab Aspirasi & Regulasi Senat Berbasis AI"
+        },
+        {
+            "name": "Aspirasi",
+            "description": "Pengelolaan Saluran Aspirasi Sivitas Akademika"
+        },
+        {
+            "name": "Voting",
+            "description": "Pemungutan Suara & E-Voting Sidang Senat"
+        },
+        {
+            "name": "Peraturan & Dokumen",
+            "description": "Produk Hukum dan Peraturan Senat Akademik"
+        },
+        {
+            "name": "Berita",
+            "description": "Publikasi Berita dan Warta Senat"
+        },
+        {
+            "name": "User",
+            "description": "Manajemen Pengguna dan Sivitas Akademika"
+        }
+    ]
+}

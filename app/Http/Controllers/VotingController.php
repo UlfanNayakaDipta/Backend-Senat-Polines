@@ -6,6 +6,7 @@ use App\Models\Voting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use OpenApi\Attributes as OA;
 
 class VotingController extends CrudController
 {
@@ -33,6 +34,19 @@ class VotingController extends CrudController
         ];
     }
 
+    #[OA\Get(
+        path: '/voting',
+        summary: 'Daftar Sesi E-Voting Sidang Senat',
+        description: 'Mengambil daftar sesi pemungutan suara (e-voting) rapat senat beserta jumlah suara.',
+        tags: ['Voting'],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'dibuka', 'ditutup'])),
+            new OA\Parameter(name: 'active', in: 'query', required: false, schema: new OA\Schema(type: 'boolean'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Daftar voting terpaginasi')
+        ]
+    )]
     public function index(?Request $request = null)
     {
         $request = $request ?? request();
@@ -47,6 +61,34 @@ class VotingController extends CrudController
         return $query->latest()->paginate(15);
     }
 
+    #[OA\Post(
+        path: '/voting',
+        summary: 'Buat Sesi E-Voting Baru',
+        description: 'Membuat agenda pemungutan suara sidang senat beserta opsi pilihan (default: Setuju, Tidak Setuju, Abstain).',
+        tags: ['Voting'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['id_rapat', 'judul_voting'],
+                properties: [
+                    new OA\Property(property: 'id_rapat', type: 'integer', example: 1),
+                    new OA\Property(property: 'judul_voting', type: 'string', example: 'Persetujuan Pembukaan Program Studi Magister Terapan Rekayasa Komputer'),
+                    new OA\Property(property: 'deskripsi', type: 'string', example: 'Pemungutan suara tertutup oleh anggota senat akademik.'),
+                    new OA\Property(property: 'status', type: 'string', enum: ['draft', 'dibuka', 'ditutup'], example: 'draft'),
+                    new OA\Property(
+                        property: 'opsi',
+                        type: 'array',
+                        items: new OA\Items(type: 'string'),
+                        example: ['Setuju', 'Tidak Setuju', 'Abstain']
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Sesi voting berhasil dibuat'),
+            new OA\Response(response: 422, description: 'Validasi gagal')
+        ]
+    )]
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate($this->rules());
@@ -68,6 +110,16 @@ class VotingController extends CrudController
         return response()->json($voting->fresh($this->with), 201);
     }
 
+    #[OA\Post(
+        path: '/voting/{id}/buka',
+        summary: 'Buka Sesi Pemungutan Suara',
+        description: 'Mengubah status voting menjadi dibuka sehingga anggota senat dapat memberikan suara.',
+        tags: ['Voting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Sesi voting berhasil dibuka')
+        ]
+    )]
     public function buka($id): JsonResponse
     {
         $voting = Voting::findOrFail($id);
@@ -79,6 +131,16 @@ class VotingController extends CrudController
         return response()->json($voting->fresh($this->with));
     }
 
+    #[OA\Post(
+        path: '/voting/{id}/tutup',
+        summary: 'Tutup Sesi Pemungutan Suara',
+        description: 'Menutup sesi voting sidang senat sehingga tidak menerima suara baru.',
+        tags: ['Voting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Sesi voting berhasil ditutup')
+        ]
+    )]
     public function tutup($id): JsonResponse
     {
         $voting = Voting::findOrFail($id);
@@ -90,6 +152,16 @@ class VotingController extends CrudController
         return response()->json($voting->fresh($this->with));
     }
 
+    #[OA\Get(
+        path: '/voting/{id}/rekap',
+        summary: 'Rekapitulasi Hasil E-Voting & Status Kuorum Sidang',
+        description: 'Menampilkan ringkasan perolehan suara per opsi, persentase kehadiran kuorum, dan hasil keputusan sidang.',
+        tags: ['Voting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Hasil rekapitulasi voting dan keputusan sidang')
+        ]
+    )]
     public function rekap($id): JsonResponse
     {
         $voting = Voting::with([
@@ -128,5 +200,56 @@ class VotingController extends CrudController
             'keputusan_sidang' => $keputusanSidang,
         ]);
     }
-}
 
+    #[OA\Get(
+        path: '/voting/{id}',
+        summary: 'Detail Sesi Voting',
+        tags: ['Voting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Detail data sesi voting'),
+            new OA\Response(response: 404, description: 'Data tidak ditemukan')
+        ]
+    )]
+    public function show($id)
+    {
+        return parent::show($id);
+    }
+
+    #[OA\Put(
+        path: '/voting/{id}',
+        summary: 'Perbarui Sesi Voting',
+        tags: ['Voting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'judul_voting', type: 'string'),
+                    new OA\Property(property: 'deskripsi', type: 'string'),
+                    new OA\Property(property: 'status', type: 'string', enum: ['draft', 'dibuka', 'ditutup'])
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Data voting berhasil diperbarui')
+        ]
+    )]
+    public function update(Request $request, $id)
+    {
+        return parent::update($request, $id);
+    }
+
+    #[OA\Delete(
+        path: '/voting/{id}',
+        summary: 'Hapus Sesi Voting',
+        tags: ['Voting'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 204, description: 'Voting berhasil dihapus')
+        ]
+    )]
+    public function destroy($id)
+    {
+        return parent::destroy($id);
+    }
+}

@@ -8,9 +8,26 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 
 class PresensiRapatController extends Controller
 {
+    #[OA\Get(
+        path: '/rapat/active',
+        summary: 'Ambil agenda sidang atau rapat senat yang aktif',
+        description: 'Mengambil data agenda rapat yang sedang berlangsung atau dijadwalkan hari ini beserta status kuorum dan QR presensi.',
+        tags: ['Presensi Rapat'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Data rapat aktif berhasil dimuat'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Tidak ada agenda sidang/rapat yang aktif'
+            )
+        ]
+    )]
     public function getActive(): JsonResponse
     {
         $now = now();
@@ -64,6 +81,31 @@ class PresensiRapatController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/rapat/{id}/generate-qr',
+        summary: 'Generate QR Code & Kode Sesi Presensi Rapat',
+        description: 'Membuka gerbang presensi rapat dan menghasilkan token QR dinamis serta kode sesi presensi 6 digit.',
+        tags: ['Presensi Rapat'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID Rapat',
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'QR presensi dan kode sesi berhasil diaktifkan'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Data rapat tidak ditemukan'
+            )
+        ]
+    )]
     public function generateQr(Request $request, int $id): JsonResponse
     {
         $rapat = Rapat::findOrFail($id);
@@ -94,6 +136,31 @@ class PresensiRapatController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/rapat/{id}/freeze-presensi',
+        summary: 'Bekukan Presensi dan Kunci Status Kuorum Sidang',
+        description: 'Menutup sesi presensi sehingga QR Code kedaluwarsa dan status kuorum terkunci.',
+        tags: ['Presensi Rapat'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID Rapat',
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Sesi presensi telah dibekukan'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Data rapat tidak ditemukan'
+            )
+        ]
+    )]
     public function freezePresensi(Request $request, int $id): JsonResponse
     {
         $rapat = Rapat::findOrFail($id);
@@ -116,6 +183,38 @@ class PresensiRapatController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/rapat/presensi',
+        summary: 'Submit Presensi Kehadiran Anggota Senat',
+        description: 'Mencatat kehadiran anggota senat melalui pemindaian QR code atau input kode sesi.',
+        tags: ['Presensi Rapat'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['id_user'],
+                properties: [
+                    new OA\Property(property: 'id_user', type: 'integer', example: 1),
+                    new OA\Property(property: 'token_qr', type: 'string', example: 'token-polines-rapat-xyz123'),
+                    new OA\Property(property: 'kode_sesi', type: 'string', example: 'PLN-789'),
+                    new OA\Property(property: 'id_rapat', type: 'integer', example: 1)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Presensi berhasil dicatat'
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validasi gagal atau presensi sudah ditutup'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Token QR / Sesi tidak ditemukan'
+            )
+        ]
+    )]
     public function submitPresensi(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -215,6 +314,31 @@ class PresensiRapatController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/rapat/{id}/live-attendance',
+        summary: 'Monitor Kehadiran Sidang dan Kuorum Real-time',
+        description: 'Mengambil daftar anggota rapat beserta status kehadiran (hadir/izin/menunggu), waktu scan, dan persentase kuorum.',
+        tags: ['Presensi Rapat'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID Rapat',
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Daftar kehadiran real-time'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Data rapat tidak ditemukan'
+            )
+        ]
+    )]
     public function getLiveAttendance(int $id): JsonResponse
     {
         $rapat = Rapat::with(['jenisRapat', 'anggotaRapats.user'])->findOrFail($id);
@@ -241,6 +365,10 @@ class PresensiRapatController extends Controller
             'data' => [
                 'id_rapat' => $rapat->id_rapat,
                 'nama_agenda' => $rapat->nama_agenda,
+                'jenis_rapat' => $rapat->jenisRapat?->nama_jenis ?? 'Sidang Senat',
+                'tanggal' => $rapat->tanggal ? $rapat->tanggal->format('Y-m-d') : null,
+                'waktu' => $rapat->waktu ? substr($rapat->waktu, 0, 5) . ' WIB' : '09:00 WIB',
+                'tempat' => $rapat->tempat ?? 'Ruang Sidang Senat',
                 'status' => $rapat->status,
                 'is_presensi_open' => (bool) $rapat->is_presensi_open,
                 'is_kuorum_locked' => (bool) $rapat->is_kuorum_locked,
@@ -252,6 +380,61 @@ class PresensiRapatController extends Controller
         ]);
     }
 
+    #[OA\Put(
+        path: '/rapat/{id}/anggota/{id_user}/validasi',
+        summary: 'Validasi Manual Kehadiran Anggota oleh Admin/Sekretariat',
+        description: 'Mengubah status presensi anggota secara manual disertai catatan resmi admin.',
+        tags: ['Presensi Rapat'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID Rapat',
+                schema: new OA\Schema(type: 'integer')
+            ),
+            new OA\Parameter(
+                name: 'id_user',
+                in: 'path',
+                required: true,
+                description: 'ID Pengguna / Anggota Senat',
+                schema: new OA\Schema(type: 'integer')
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['status_kehadiran'],
+                properties: [
+                    new OA\Property(
+                        property: 'status_kehadiran',
+                        type: 'string',
+                        enum: ['hadir', 'izin', 'tidak_hadir', 'menunggu'],
+                        example: 'hadir'
+                    ),
+                    new OA\Property(
+                        property: 'catatan',
+                        type: 'string',
+                        example: 'Hadir langsung di ruang sidang lantai 2'
+                    )
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Status kehadiran berhasil divalidasi manual'
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Status kehadiran tidak valid'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Rapat atau anggota tidak ditemukan'
+            )
+        ]
+    )]
     public function validasiManual(Request $request, int $id, int $id_user): JsonResponse
     {
         $validated = $request->validate([
