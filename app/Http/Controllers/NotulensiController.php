@@ -12,12 +12,11 @@ class NotulensiController extends CrudController
     protected function rules(?int $id = null): array
     {
         return [
-            'id_rapat' => ['required', 'exists:rapats,id_rapat'],
-            'id_user' => ['required', 'exists:users,id_user'],
-            'isi_notulensi' => ['required', 'string'],
-            'file_risalah' => ['nullable', 'string', 'max:500'],
-            'status' => ['nullable', 'string', 'in:draf,review,disahkan,Draf,Review,Disahkan'],
-            'tanggal_dibuat' => ['nullable', 'date'],
+            'id_rapat' => ['required','exists:rapats,id_rapat'],
+            'id_user' => ['required','exists:users,id_user'],
+            'isi_notulensi' => ['required','string'],
+            'rekomendasi_keputusan' => ['nullable','string','in:Pertimbangan,Penetapan,Keputusan'],
+            'file_risalah' => ['nullable','string','max:255'],
         ];
     }
 
