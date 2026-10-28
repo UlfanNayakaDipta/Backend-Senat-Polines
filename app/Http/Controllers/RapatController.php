@@ -9,7 +9,7 @@ use OpenApi\Attributes as OA;
 class RapatController extends CrudController
 {
     protected string $model = Rapat::class;
-    protected array $with = ['jenisRapat', 'kegiatan'];
+    protected array $with = ['jenisRapat', 'kegiatan', 'notulensi'];
 
     protected function rules(?int $id = null): array
     {
