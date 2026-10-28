@@ -8,6 +8,7 @@ use App\Models\Voting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
 class SuaraVotingController extends CrudController
 {
@@ -23,6 +24,46 @@ class SuaraVotingController extends CrudController
         ];
     }
 
+    #[OA\Get(
+        path: '/suara-voting',
+        summary: 'Daftar Suara Masuk (E-Voting)',
+        tags: ['Voting'],
+        responses: [
+            new OA\Response(response: 200, description: 'Daftar perolehan suara terpaginasi')
+        ]
+    )]
+    public function index()
+    {
+        return parent::index();
+    }
+
+    #[OA\Post(
+        path: '/suara-voting',
+        summary: 'Submit Suara E-Voting Sidang Senat',
+        description: 'Mencatat pilihan suara anggota senat pada sesi voting yang aktif (satu anggota satu suara).',
+        tags: ['Voting'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['id_voting', 'id_opsi'],
+                properties: [
+                    new OA\Property(property: 'id_voting', type: 'integer', example: 1),
+                    new OA\Property(property: 'id_opsi', type: 'integer', example: 1),
+                    new OA\Property(property: 'id_user', type: 'integer', nullable: true, example: 1)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Suara berhasil disimpan dan rekapitulasi diperbarui'
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Voting belum dibuka, sudah memberikan suara, atau opsi tidak valid'
+            )
+        ]
+    )]
     public function store(Request $request): JsonResponse
     {
         $idVoting = $request->input('id_voting');
@@ -83,4 +124,3 @@ class SuaraVotingController extends CrudController
         ], 201);
     }
 }
-

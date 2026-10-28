@@ -19,5 +19,5 @@ if [ ! -d "vendor" ]; then
     composer install
 fi
 
-echo "Starting Senat Polines API on http://127.0.0.1:8000 ..."
-php artisan serve
+echo "Starting Senat Polines API on http://127.0.0.1:3000 ..."
+php artisan serve --port=3000

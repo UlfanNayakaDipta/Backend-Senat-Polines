@@ -27,10 +27,22 @@ Atur `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, dan `DB_PASSWORD` pada 
 php artisan key:generate
 mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
 php artisan migrate --seed
-php artisan serve
+php artisan serve --port=3000
 ```
 
-API tersedia pada `http://127.0.0.1:8000/api`.
+API tersedia pada `http://127.0.0.1:3000/api`.
+
+## Dokumentasi API (Swagger UI / OpenAPI)
+
+Dokumentasi interaktif OpenAPI / Swagger UI telah dikonfigurasi menggunakan `darkaonline/l5-swagger`:
+- **Swagger UI**: [http://127.0.0.1:3000/api/documentation](http://127.0.0.1:3000/api/documentation)
+- **OpenAPI JSON Spec**: [http://127.0.0.1:3000/docs](http://127.0.0.1:3000/docs)
+
+Untuk meregenerasi OpenAPI spec secara manual:
+```bash
+php artisan l5-swagger:generate
+```
+*(Catatan: Mode otomatis telah aktif melalui `L5_SWAGGER_GENERATE_ALWAYS=true` pada `.env`)*
 
 ## Handoff
 
