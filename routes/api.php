@@ -48,6 +48,9 @@ Route::group([], function () {
     Route::apiResource('anggota-kegiatan', AnggotaKegiatanController::class);
     Route::apiResource('materi-rapat', MateriRapatController::class);
     Route::apiResource('notulensi', NotulensiController::class);
+    Route::post('voting/{id}/buka', [VotingController::class, 'buka']);
+    Route::post('voting/{id}/tutup', [VotingController::class, 'tutup']);
+    Route::get('voting/{id}/rekap', [VotingController::class, 'rekap']);
     Route::apiResource('voting', VotingController::class);
     Route::apiResource('opsi-voting', OpsiVotingController::class);
     Route::apiResource('suara-voting', SuaraVotingController::class);
