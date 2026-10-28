@@ -15,6 +15,7 @@ class NotulensiController extends CrudController
             'id_rapat' => ['required','exists:rapats,id_rapat'],
             'id_user' => ['required','exists:users,id_user'],
             'isi_notulensi' => ['required','string'],
+            'rekomendasi_keputusan' => ['nullable','string','in:Pertimbangan,Penetapan,Keputusan'],
             'file_risalah' => ['nullable','string','max:255'],
         ];
     }
