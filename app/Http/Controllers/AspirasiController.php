@@ -7,7 +7,7 @@ use App\Models\Aspirasi;
 class AspirasiController extends CrudController
 {
     protected string $model = Aspirasi::class;
-    protected array $with = ['user', 'kategori'];
+    protected array $with = ['user', 'kategori', 'tanggapans.user'];
 
     protected function rules(?int $id = null): array
     {

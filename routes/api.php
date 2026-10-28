@@ -21,10 +21,16 @@ use App\Http\Controllers\SuaraVotingController;
 use App\Http\Controllers\PeraturanController;
 use App\Http\Controllers\BeritaController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PresensiRapatController;
 
 // Tambahkan middleware auth (mis. 'auth:sanctum') sesuai kebutuhan
 Route::group([], function () {
+    // Autentikasi Pengguna
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::get('me', [AuthController::class, 'me']);
+
     Route::apiResource('periode-senat', PeriodeSenatController::class);
     Route::apiResource('komisi', KomisiController::class);
     Route::apiResource('enrollment', EnrollmentController::class);
