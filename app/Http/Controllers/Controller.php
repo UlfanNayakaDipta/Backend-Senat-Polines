@@ -19,12 +19,16 @@ use OpenApi\Attributes as OA;
     )
 )]
 #[OA\Server(
-    url: "http://127.0.0.1:3000/api",
-    description: "Backend API Server (Port 3000)"
+    url: "http://127.0.0.1:8001/api",
+    description: "Backend API Server (Port 8001 - Default)"
 )]
 #[OA\Server(
-    url: "http://127.0.0.1:8000/api",
-    description: "Alternative Backend Server (Port 8000)"
+    url: "/api",
+    description: "Relative API Path (Auto-match Host & Port)"
+)]
+#[OA\Server(
+    url: "http://127.0.0.1:3000/api",
+    description: "Alternative Port 3000"
 )]
 #[OA\Tag(name: "Presensi Rapat", description: "Sistem Presensi QR Code & Monitoring Kuorum Sidang Real-time")]
 #[OA\Tag(name: "Rapat & Sidang", description: "Manajemen Agenda Rapat dan Sidang Senat")]
