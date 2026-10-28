@@ -21,6 +21,7 @@ use App\Http\Controllers\SuaraVotingController;
 use App\Http\Controllers\PeraturanController;
 use App\Http\Controllers\BeritaController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\PresensiRapatController;
 
 // Tambahkan middleware auth (mis. 'auth:sanctum') sesuai kebutuhan
 Route::group([], function () {
@@ -33,6 +34,15 @@ Route::group([], function () {
     Route::apiResource('tanggapan-aspirasi', TanggapanAspirasiController::class);
     Route::apiResource('kegiatan', KegiatanController::class);
     Route::apiResource('jenis-rapat', JenisRapatController::class);
+
+    // Presensi QR & Kuorum Rapat
+    Route::get('rapat/active', [PresensiRapatController::class, 'getActive']);
+    Route::post('rapat/presensi', [PresensiRapatController::class, 'submitPresensi']);
+    Route::post('rapat/{id}/generate-qr', [PresensiRapatController::class, 'generateQr']);
+    Route::post('rapat/{id}/freeze-presensi', [PresensiRapatController::class, 'freezePresensi']);
+    Route::get('rapat/{id}/live-attendance', [PresensiRapatController::class, 'getLiveAttendance']);
+    Route::put('rapat/{id}/anggota/{id_user}/validasi', [PresensiRapatController::class, 'validasiManual']);
+
     Route::apiResource('rapat', RapatController::class);
     Route::apiResource('anggota-rapat', AnggotaRapatController::class);
     Route::apiResource('anggota-kegiatan', AnggotaKegiatanController::class);
