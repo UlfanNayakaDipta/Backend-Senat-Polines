@@ -65,7 +65,53 @@ class RapatController extends CrudController
     )]
     public function store(Request $request)
     {
-        return parent::store($request);
+        $validated = $request->validate([
+            'id_kegiatan' => ['nullable', 'exists:kegiatans,id_kegiatan'],
+            'id_user' => ['required', 'exists:users,id_user'],
+            'id_jenis_rapat' => ['required', 'exists:jenis_rapats,id_jenis_rapat'],
+            'nama_agenda' => ['required', 'string', 'max:255'],
+            'tanggal' => ['required', 'date'],
+            'waktu' => ['required'],
+            'tempat' => ['required', 'string', 'max:255'],
+            'status' => ['nullable', 'string', 'max:255'],
+            'invited_user_ids' => ['nullable', 'array'],
+        ]);
+
+        $rapat = Rapat::create([
+            'id_kegiatan' => $validated['id_kegiatan'] ?? null,
+            'id_user' => $validated['id_user'],
+            'id_jenis_rapat' => $validated['id_jenis_rapat'],
+            'nama_agenda' => $validated['nama_agenda'],
+            'tanggal' => $validated['tanggal'],
+            'waktu' => $validated['waktu'],
+            'tempat' => $validated['tempat'],
+            'status' => $validated['status'] ?? 'Terjadwal',
+            'token_qr' => 'token-qr-' . uniqid(),
+            'kode_sesi' => 'PLN-' . rand(100, 999),
+            'is_presensi_open' => false,
+            'is_kuorum_locked' => false,
+        ]);
+
+        $invitedIds = $request->input('invited_user_ids', []);
+        if (empty($invitedIds)) {
+            $invitedIds = \App\Models\User::pluck('id_user')->toArray();
+        }
+
+        foreach ($invitedIds as $userId) {
+            \App\Models\AnggotaRapat::create([
+                'id_rapat' => $rapat->id_rapat,
+                'id_user' => $userId,
+                'status_kehadiran' => 'menunggu',
+            ]);
+        }
+
+        $rapat->load(['jenisRapat', 'kegiatan', 'anggotaRapats.user']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rapat berhasil dibuat dengan ' . count($invitedIds) . ' peserta diundang.',
+            'data' => $rapat,
+        ], 201);
     }
 
     #[OA\Get(

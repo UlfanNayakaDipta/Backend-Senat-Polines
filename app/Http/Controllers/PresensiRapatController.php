@@ -365,6 +365,10 @@ class PresensiRapatController extends Controller
             'data' => [
                 'id_rapat' => $rapat->id_rapat,
                 'nama_agenda' => $rapat->nama_agenda,
+                'jenis_rapat' => $rapat->jenisRapat?->nama_jenis ?? 'Sidang Senat',
+                'tanggal' => $rapat->tanggal ? $rapat->tanggal->format('Y-m-d') : null,
+                'waktu' => $rapat->waktu ? substr($rapat->waktu, 0, 5) . ' WIB' : '09:00 WIB',
+                'tempat' => $rapat->tempat ?? 'Ruang Sidang Senat',
                 'status' => $rapat->status,
                 'is_presensi_open' => (bool) $rapat->is_presensi_open,
                 'is_kuorum_locked' => (bool) $rapat->is_kuorum_locked,

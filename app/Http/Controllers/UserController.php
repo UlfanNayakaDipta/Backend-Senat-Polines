@@ -10,7 +10,7 @@ use OpenApi\Attributes as OA;
 class UserController extends CrudController
 {
     protected string $model = User::class;
-    protected array $with = [];
+    protected array $with = ['enrollments.komisi'];
 
     protected function rules(?int $id = null): array
     {
