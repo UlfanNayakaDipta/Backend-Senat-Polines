@@ -13,7 +13,15 @@ abstract class CrudController extends Controller
 
     public function index()
     {
-        return $this->model::with($this->with)->latest()->paginate(15);
+        $request = request();
+        $query = $this->model::with($this->with);
+
+        if ($request->boolean('all')) {
+            return response()->json($query->latest()->get());
+        }
+
+        $perPage = $request->integer('per_page', 15);
+        return $query->latest()->paginate($perPage);
     }
 
     public function store(Request $request)

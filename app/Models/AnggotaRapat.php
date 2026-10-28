@@ -11,6 +11,14 @@ class AnggotaRapat extends Model
     protected $primaryKey = 'id_undangan';
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'waktu_presensi' => 'datetime',
+            'is_edited_by_admin' => 'boolean',
+        ];
+    }
+
     public function rapat(): BelongsTo
     {
         return $this->belongsTo(Rapat::class, 'id_rapat', 'id_rapat');
