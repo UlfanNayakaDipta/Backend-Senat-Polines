@@ -234,6 +234,33 @@
                                         "type": "string",
                                         "nullable": true
                                     },
+                                    "galeri": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "lampiran": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "name",
+                                                "url"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Risalah Sidang"
+                                                },
+                                                "url": {
+                                                    "type": "string",
+                                                    "format": "uri",
+                                                    "example": "https://example.test/risalah.pdf"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
                                     "tanggal_publish": {
                                         "type": "string",
                                         "format": "date",
@@ -310,6 +337,33 @@
                                     },
                                     "gambar": {
                                         "type": "string"
+                                    },
+                                    "galeri": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "lampiran": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "name",
+                                                "url"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Risalah Sidang"
+                                                },
+                                                "url": {
+                                                    "type": "string",
+                                                    "format": "uri",
+                                                    "example": "https://example.test/risalah.pdf"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
