@@ -25,7 +25,7 @@ class RapatLampiranController extends Controller
     {
         $data = $request->validate([
             'id_user' => ['required', 'exists:users,id_user'],
-            'file' => ['nullable', 'file', 'max:10240'],
+            'file' => ['nullable', 'file', 'max:1024000'],
             'nama' => ['nullable', 'string', 'max:255'],
             'url' => ['nullable', 'string', 'max:2048'],
         ]);

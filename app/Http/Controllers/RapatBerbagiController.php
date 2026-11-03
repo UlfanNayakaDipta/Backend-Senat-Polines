@@ -28,7 +28,7 @@ class RapatBerbagiController extends Controller
             'jenis' => ['nullable', 'in:file,link'],
             'nama' => ['nullable', 'string', 'max:255'],
             'url' => ['nullable', 'string', 'max:2048'],
-            'file' => ['nullable', 'file', 'max:10240'],
+            'file' => ['nullable', 'file', 'max:1024000'],
         ]);
 
         if ($request->hasFile('file')) {
