@@ -23,6 +23,10 @@ use App\Http\Controllers\BeritaController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PresensiRapatController;
+use App\Http\Controllers\RapatCatatanController;
+use App\Http\Controllers\RapatLampiranController;
+use App\Http\Controllers\RapatBerbagiController;
+use App\Http\Controllers\RapatRekamanController;
 
 // Tambahkan middleware auth (mis. 'auth:sanctum') sesuai kebutuhan
 Route::group([], function () {
@@ -50,6 +54,24 @@ Route::group([], function () {
     Route::put('rapat/{id}/anggota/{id_user}/validasi', [PresensiRapatController::class, 'validasiManual']);
 
     Route::apiResource('rapat', RapatController::class);
+
+    // Workspace rapat: catatan anggota, lampiran notulensi, berbagi dokumen/tautan
+    Route::get('rapat/{id_rapat}/catatan', [RapatCatatanController::class, 'index']);
+    Route::put('rapat/{id_rapat}/catatan', [RapatCatatanController::class, 'upsert']);
+    Route::get('rapat/{id_rapat}/lampiran', [RapatLampiranController::class, 'index']);
+    Route::post('rapat/{id_rapat}/lampiran', [RapatLampiranController::class, 'store']);
+    Route::delete('rapat/{id_rapat}/lampiran/{id_lampiran}', [RapatLampiranController::class, 'destroy']);
+    Route::get('rapat/{id_rapat}/berbagi', [RapatBerbagiController::class, 'index']);
+    Route::post('rapat/{id_rapat}/berbagi', [RapatBerbagiController::class, 'store']);
+    Route::delete('rapat/{id_rapat}/berbagi/{id_berbagi}', [RapatBerbagiController::class, 'destroy']);
+
+    // Rekaman rapat → notulensi otomatis (STT + LLM, proses di queue)
+    Route::get('rapat/{id_rapat}/rekaman', [RapatRekamanController::class, 'index']);
+    Route::post('rapat/{id_rapat}/rekaman', [RapatRekamanController::class, 'store']);
+    Route::get('rapat/{id_rapat}/rekaman/{id_rekaman}', [RapatRekamanController::class, 'show']);
+    Route::delete('rapat/{id_rapat}/rekaman/{id_rekaman}', [RapatRekamanController::class, 'destroy']);
+
+
     Route::apiResource('anggota-rapat', AnggotaRapatController::class);
     Route::apiResource('anggota-kegiatan', AnggotaKegiatanController::class);
     Route::apiResource('materi-rapat', MateriRapatController::class);

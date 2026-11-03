@@ -17,7 +17,12 @@ class BeritaController extends CrudController
             'id_user' => ['required','exists:users,id_user'],
             'judul' => ['required','string','max:255'],
             'isi' => ['required','string'],
-            'gambar' => ['nullable','string','max:255'],
+            'gambar' => ['nullable','string','max:2048'],
+            'galeri' => ['nullable','array','max:12'],
+            'galeri.*' => ['required','string','max:2048','url:http,https'],
+            'lampiran' => ['nullable','array','max:12'],
+            'lampiran.*.name' => ['required','string','max:255'],
+            'lampiran.*.url' => ['required','string','max:2048','url:http,https'],
             'tanggal_publish' => ['nullable','date'],
         ];
     }
@@ -48,6 +53,19 @@ class BeritaController extends CrudController
                     new OA\Property(property: 'judul', type: 'string', example: 'Sosialisasi Kebijakan Baru Kurikulum Terapan Polines'),
                     new OA\Property(property: 'isi', type: 'string', example: 'Senat Akademik menyelenggarakan sosialisasi kebijakan penyesuaian kurikulum...'),
                     new OA\Property(property: 'gambar', type: 'string', nullable: true),
+                    new OA\Property(property: 'galeri', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(
+                        property: 'lampiran',
+                        type: 'array',
+                        items: new OA\Items(
+                            type: 'object',
+                            required: ['name', 'url'],
+                            properties: [
+                                new OA\Property(property: 'name', type: 'string', example: 'Risalah Sidang'),
+                                new OA\Property(property: 'url', type: 'string', format: 'uri', example: 'https://example.test/risalah.pdf'),
+                            ]
+                        )
+                    ),
                     new OA\Property(property: 'tanggal_publish', type: 'string', format: 'date', example: '2026-10-28')
                 ]
             )
@@ -87,7 +105,20 @@ class BeritaController extends CrudController
                 properties: [
                     new OA\Property(property: 'judul', type: 'string'),
                     new OA\Property(property: 'isi', type: 'string'),
-                    new OA\Property(property: 'gambar', type: 'string')
+                    new OA\Property(property: 'gambar', type: 'string'),
+                    new OA\Property(property: 'galeri', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(
+                        property: 'lampiran',
+                        type: 'array',
+                        items: new OA\Items(
+                            type: 'object',
+                            required: ['name', 'url'],
+                            properties: [
+                                new OA\Property(property: 'name', type: 'string', example: 'Risalah Sidang'),
+                                new OA\Property(property: 'url', type: 'string', format: 'uri', example: 'https://example.test/risalah.pdf'),
+                            ]
+                        )
+                    )
                 ]
             )
         ),
