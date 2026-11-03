@@ -19,22 +19,10 @@ class ChatbotService
     {
         $this->apiKey = config('services.ai.api_key', env('AI_API_KEY', ''));
         $this->model  = config('services.ai.model', env('AI_MODEL', 'gemini-3.5-flash-lite'));
-<<<<<<< HEAD
-        $this->endpoint = config('services.ai.endpoint', env('AI_ENDPOINT', 'https://api.openai.com/v1/chat/completions'));
-    }
-
-    /**
-     * Memproses chat dengan LLM menggunakan AI (OpenAI/Gemini/9router).
-     *
-     * @param string $message Pesan dari user/mahasiswa.
-     * @param array $history Riwayat percakapan sebelumnya.
-     * @return array Hasil balasan dari chatbot.
-=======
     }
 
     /**
      * Memproses chat dengan guardrails ketat (hanya seputar Senat Polines & Website).
->>>>>>> 99ac6ef (feat(ai): integrate Gemini Flash Lite with Senat knowledge base and guardrails)
      */
     public function respond(string $message, array $history = []): array
     {
@@ -48,8 +36,6 @@ BATASAN KETAT (GUARDRAILS & ANTI-HALUSINASI):
    "Maaf, saya asisten virtual khusus Senat Polines. Saya hanya dapat membantu menjawab pertanyaan seputar struktur organisasi senat, peraturan akademik, agenda sidang, dan layanan aspirasi mahasiswa di portal ini."
 3. Format teks rapi, sopan, bahasa Indonesia yang baik, padat dan to-the-point (maksimal 2 paragraf ringkas).
 
-<<<<<<< HEAD
-=======
 KNOWLEDGE BASE RESMI SENAT POLINES:
 - Pimpinan Senat (Periode 2026–2029):
   • Ketua Senat: Dr. Sukamto, S.Kom., M.T. (NIP 197101172003121001)
@@ -64,7 +50,6 @@ KNOWLEDGE BASE RESMI SENAT POLINES:
   4. Komisi IV (Pengembangan dan Kerja Sama) - Ketua: FX Arif Wahyudianto, S.T., M.T. / Sekr: Alvianita Gunawan Putri, S.T., M.T. (Fokus: kemitraan industri, rencana induk pengembangan, program strategis).
   5. Komisi V (Komisi Etik) - Ketua: Drs. Suroso, M.Pd. / Sekr: Achmad Zaenuddin, S.T., M.T. (Fokus: kode etik dosen, integritas sivitas, penegakan disiplin akademik).
 
->>>>>>> 99ac6ef (feat(ai): integrate Gemini Flash Lite with Senat knowledge base and guardrails)
 NAVIGASI WEBSITE & FITUR (gunakan path ini persis, jangan mengarang URL lain):
 • Beranda (/)
 • Profil (/profil) — visi & misi; Tugas & Wewenang (/profil/tugas-wewenang); Struktur Organisasi (/profil/struktur-organisasi).
@@ -77,11 +62,8 @@ Jika pengguna menyampaikan keluhan atau usulan kebijakan/fasilitas, arahkan mere
 PROMPT;
 
         $contents = [];
-<<<<<<< HEAD
-=======
 
         // Masukkan history percakapan sebelumnya jika ada
->>>>>>> 99ac6ef (feat(ai): integrate Gemini Flash Lite with Senat knowledge base and guardrails)
         $cleanHistory = array_slice($history, -6);
         foreach ($cleanHistory as $h) {
             if (isset($h['role'], $h['content']) && in_array($h['role'], ['user', 'assistant'])) {
@@ -93,10 +75,7 @@ PROMPT;
             }
         }
 
-<<<<<<< HEAD
-=======
         // Pesan user saat ini
->>>>>>> 99ac6ef (feat(ai): integrate Gemini Flash Lite with Senat knowledge base and guardrails)
         $contents[] = [
             'role' => 'user',
             'parts' => [['text' => $message]]
@@ -108,25 +87,11 @@ PROMPT;
             ],
             'contents' => $contents,
             'generationConfig' => [
-<<<<<<< HEAD
-                'temperature' => 0.2,
-=======
                 'temperature' => 0.1, // Sangat deterministik
->>>>>>> 99ac6ef (feat(ai): integrate Gemini Flash Lite with Senat knowledge base and guardrails)
                 'maxOutputTokens' => 600,
             ]
         ];
 
-<<<<<<< HEAD
-        try {
-            $response = Http::timeout(20)
-                ->withHeaders(['Authorization' => "Bearer {$this->apiKey}", 'Content-Type' => 'application/json'])
-                ->post($this->endpoint, $payload);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                $reply = $data['choices'][0]['message']['content'] ?? null;
-=======
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
 
         try {
@@ -141,7 +106,6 @@ PROMPT;
             if ($response->successful()) {
                 $data = $response->json();
                 $reply = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
->>>>>>> 99ac6ef (feat(ai): integrate Gemini Flash Lite with Senat knowledge base and guardrails)
 
                 if ($reply) {
                     return [
@@ -151,21 +115,13 @@ PROMPT;
                 }
             }
 
-<<<<<<< HEAD
-            Log::error('LLM API Error: ' . $response->body());
-=======
             Log::error('Gemini API Error: ' . $response->body());
->>>>>>> 99ac6ef (feat(ai): integrate Gemini Flash Lite with Senat knowledge base and guardrails)
         } catch (\Throwable $e) {
             Log::error('ChatbotService Exception: ' . $e->getMessage());
         }
 
         return [
-<<<<<<< HEAD
-            'reply' => 'Layanan chatbot AI Senat Polines sedang dalam antrean pemrosesan.',
-=======
             'reply' => 'Halo! Saya asisten Senat Polines. Saat ini layanan AI sedang dalam antrean pemrosesan. Anda dapat membaca informasi profil Senat di menu Profil, menelaah aturan di menu Produk Hukum, atau mengirimkan masukan via Kanal Aspirasi.',
->>>>>>> 99ac6ef (feat(ai): integrate Gemini Flash Lite with Senat knowledge base and guardrails)
             'fallback' => true,
         ];
     }
