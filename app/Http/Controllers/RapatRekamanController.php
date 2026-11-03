@@ -29,7 +29,7 @@ class RapatRekamanController extends Controller
     {
         $data = $request->validate([
             'id_user' => ['required', 'exists:users,id_user'],
-            'berkas' => ['required', 'file', 'max:512000'], // 500 MB
+            'berkas' => ['required', 'file', 'max:1024000'], // 1 GB
             'bahasa' => ['nullable', 'string', 'max:10'],
         ]);
 

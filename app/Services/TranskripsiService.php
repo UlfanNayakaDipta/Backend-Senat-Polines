@@ -19,6 +19,7 @@ class TranskripsiService
     private string $ffmpeg;
     private string $ffprobe;
     private int $potongDetik;
+    private int $maksDetik;
 
     public function __construct()
     {
@@ -27,6 +28,7 @@ class TranskripsiService
         $this->ffmpeg = is_file('/usr/bin/ffmpeg') ? '/usr/bin/ffmpeg' : 'ffmpeg';
         $this->ffprobe = is_file('/usr/bin/ffprobe') ? '/usr/bin/ffprobe' : 'ffprobe';
         $this->potongDetik = (int) (config('services.groq.chunk_seconds') ?: env('GROQ_STT_CHUNK_SECONDS', 1200));
+        $this->maksDetik = (int) (config('services.groq.maks_detik') ?: env('REKAMAN_MAKS_DETIK', 14400)); // 4 jam
     }
 
     /**
@@ -41,6 +43,17 @@ class TranskripsiService
 
         if (! is_file($berkasAbsolut)) {
             throw new RuntimeException('Berkas rekaman tidak ditemukan.');
+        }
+
+        // Periksa durasi pada berkas ASLI sebelum ekstraksi — menolak lebih awal
+        // jauh lebih murah daripada memotong audio yang tidak akan diproses.
+        $durasiAsli = $this->durasi($berkasAbsolut);
+        if ($this->maksDetik > 0 && $durasiAsli > $this->maksDetik) {
+            throw new RuntimeException(sprintf(
+                'Durasi rekaman %s melebihi batas %s. Potong rekaman atau naikkan REKAMAN_MAKS_DETIK.',
+                $this->formatDurasi($durasiAsli),
+                $this->formatDurasi($this->maksDetik)
+            ));
         }
 
         $kerja = storage_path('app/rekaman-' . uniqid());
@@ -79,6 +92,16 @@ class TranskripsiService
         } finally {
             $this->bersihkan($kerja);
         }
+    }
+
+    private function formatDurasi(int $detik): string
+    {
+        $jam = intdiv($detik, 3600);
+        $sisa = $detik % 3600;
+
+        return $jam > 0
+            ? sprintf('%d jam %d mnt', $jam, intdiv($sisa, 60))
+            : sprintf('%d mnt %d dtk', intdiv($detik, 60), $sisa % 60);
     }
 
     private function durasi(string $berkas): int

@@ -57,6 +57,17 @@ class ProsesRekamanJob implements ShouldQueue
                 throw new \RuntimeException('Transkrip kosong — rekaman mungkin tanpa suara.');
             }
 
+            // Whisper dikenal "berhalusinasi" pada audio hening (mis. "Terima kasih.").
+            // Tolak hasil yang jelas tidak sepadan dengan durasi rekaman.
+            $jumlahKata = count(preg_split('/\s+/', trim((string) $hasil['transkrip'])) ?: []);
+            if ($hasil['durasi'] > 120 && $jumlahKata < 10) {
+                throw new \RuntimeException(sprintf(
+                    'Transkrip hanya %d kata untuk rekaman %d menit — audio kemungkinan hening, terpotong, atau rusak.',
+                    $jumlahKata,
+                    (int) round($hasil['durasi'] / 60)
+                ));
+            }
+
             $rekaman->update(['status' => 'menyusun', 'progres' => 78]);
             $this->lapor();
 
@@ -89,10 +100,22 @@ class ProsesRekamanJob implements ShouldQueue
         } catch (Throwable $e) {
             Log::error('ProsesRekamanJob gagal: ' . $e->getMessage(), ['id_rekaman' => $this->idRekaman]);
 
-            $rekaman->update([
+            // Rekaman yang ditolak karena batas durasi tidak akan pernah berhasil;
+            // hapus berkasnya agar tidak menumpuk di disk.
+            $perubahan = [
                 'status' => 'gagal',
                 'error' => mb_substr($e->getMessage(), 0, 1000),
-            ]);
+            ];
+
+            if (str_contains($e->getMessage(), 'melebihi batas')) {
+                $path = public_path($rekaman->berkas);
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+                $perubahan['berkas'] = 'ditolak/melebihi-batas-durasi/' . basename((string) $rekaman->berkas);
+            }
+
+            $rekaman->update($perubahan);
             $this->lapor();
 
             throw $e;
