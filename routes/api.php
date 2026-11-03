@@ -26,6 +26,7 @@ use App\Http\Controllers\PresensiRapatController;
 use App\Http\Controllers\RapatCatatanController;
 use App\Http\Controllers\RapatLampiranController;
 use App\Http\Controllers\RapatBerbagiController;
+use App\Http\Controllers\RapatRekamanController;
 
 // Tambahkan middleware auth (mis. 'auth:sanctum') sesuai kebutuhan
 Route::group([], function () {
@@ -63,6 +64,13 @@ Route::group([], function () {
     Route::get('rapat/{id_rapat}/berbagi', [RapatBerbagiController::class, 'index']);
     Route::post('rapat/{id_rapat}/berbagi', [RapatBerbagiController::class, 'store']);
     Route::delete('rapat/{id_rapat}/berbagi/{id_berbagi}', [RapatBerbagiController::class, 'destroy']);
+
+    // Rekaman rapat → notulensi otomatis (STT + LLM, proses di queue)
+    Route::get('rapat/{id_rapat}/rekaman', [RapatRekamanController::class, 'index']);
+    Route::post('rapat/{id_rapat}/rekaman', [RapatRekamanController::class, 'store']);
+    Route::get('rapat/{id_rapat}/rekaman/{id_rekaman}', [RapatRekamanController::class, 'show']);
+    Route::delete('rapat/{id_rapat}/rekaman/{id_rekaman}', [RapatRekamanController::class, 'destroy']);
+
 
     Route::apiResource('anggota-rapat', AnggotaRapatController::class);
     Route::apiResource('anggota-kegiatan', AnggotaKegiatanController::class);
