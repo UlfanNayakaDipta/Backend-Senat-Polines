@@ -35,7 +35,13 @@ class RapatController extends CrudController
     )]
     public function index()
     {
-        return parent::index();
+        return Rapat::with($this->with)
+            ->withCount([
+                'anggotaRapats',
+                'anggotaRapats as hadir_count' => fn ($q) => $q->whereRaw("LOWER(status_kehadiran) = 'hadir'")->orWhereNotNull('waktu_presensi'),
+            ])
+            ->latest()
+            ->paginate(request()->integer('per_page', 15));
     }
 
     #[OA\Post(

@@ -15,7 +15,7 @@ class VotingController extends CrudController
     public function __construct()
     {
         $this->with = [
-            'rapat',
+            'rapat.anggotaRapats', 'suaraVotings',
             'opsiVotings' => fn ($q) => $q->withCount('suaraVotings'),
         ];
     }
@@ -23,8 +23,8 @@ class VotingController extends CrudController
     protected function rules(?int $id = null): array
     {
         return [
-            'id_rapat' => ['required', 'exists:rapats,id_rapat'],
-            'judul_voting' => ['required', 'string', 'max:255'],
+            'id_rapat' => [$id ? 'sometimes' : 'required', 'exists:rapats,id_rapat'],
+            'judul_voting' => [$id ? 'sometimes' : 'required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
             'status' => ['nullable', 'string', 'max:255'],
             'waktu_mulai' => ['nullable', 'date'],
@@ -96,6 +96,15 @@ class VotingController extends CrudController
         $votingData = Arr::except($data, ['opsi']);
         $votingData['status'] = $votingData['status'] ?? 'draft';
 
+        // Hanya boleh ada 1 sesi voting yang dibuka dalam satu waktu.
+        // Jika sesi baru dibuka, otomatis tutup semua sesi voting lain yang masih terbuka.
+        if (in_array(strtolower($votingData['status']), ['dibuka', 'aktif', 'active', 'open'], true)) {
+            Voting::whereIn('status', ['dibuka', 'aktif', 'active', 'open'])->update([
+                'status' => 'ditutup',
+                'waktu_selesai' => now(),
+            ]);
+        }
+
         $voting = Voting::create($votingData);
 
         $opsi = $request->input('opsi');
@@ -123,9 +132,19 @@ class VotingController extends CrudController
     public function buka($id): JsonResponse
     {
         $voting = Voting::findOrFail($id);
+
+        // Tutup sesi voting lain yang masih terbuka agar tidak ada duplikasi sesi aktif
+        Voting::whereIn('status', ['dibuka', 'aktif', 'active', 'open'])
+            ->where('id_voting', '!=', $id)
+            ->update([
+                'status' => 'ditutup',
+                'waktu_selesai' => now(),
+            ]);
+
         $voting->update([
             'status' => 'dibuka',
-            'waktu_mulai' => now(),
+            'waktu_mulai' => $voting->waktu_mulai ?? now(),
+            'waktu_selesai' => null,
         ]);
 
         return response()->json($voting->fresh($this->with));
@@ -250,6 +269,11 @@ class VotingController extends CrudController
     )]
     public function destroy($id)
     {
-        return parent::destroy($id);
+        $voting = Voting::findOrFail($id);
+        \App\Models\SuaraVoting::where('id_voting', $voting->id_voting)->delete();
+        \App\Models\OpsiVoting::where('id_voting', $voting->id_voting)->delete();
+        $voting->delete();
+
+        return response()->noContent();
     }
 }
