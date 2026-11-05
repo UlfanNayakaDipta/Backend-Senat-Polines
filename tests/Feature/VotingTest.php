@@ -11,6 +11,7 @@ use App\Models\Voting;
 use Database\Seeders\VotingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Laravel\Sanctum\Sanctum;
 
 class VotingTest extends TestCase
 {
@@ -18,7 +19,8 @@ class VotingTest extends TestCase
 
     private function createRapat(): Rapat
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
+        Sanctum::actingAs($user);
         $jenis = JenisRapat::create(['nama_jenis' => 'Rapat Pleno']);
 
         return Rapat::create([
@@ -151,7 +153,8 @@ class VotingTest extends TestCase
         $this->assertEquals('dibuka', $resBuka->json('status'));
         $this->assertNotNull($resBuka->json('waktu_mulai'));
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
+        Sanctum::actingAs($user);
         SuaraVoting::create([
             'id_voting' => $voting->id_voting,
             'id_opsi' => $opsi1->id_opsi,
@@ -185,7 +188,8 @@ class VotingTest extends TestCase
             'status' => 'ditutup',
         ]);
         $opsi = $voting->opsiVotings()->create(['nama_opsi' => 'Setuju']);
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
+        Sanctum::actingAs($user);
 
         $resClosed = $this->postJson('/api/suara-voting', [
             'id_voting' => $voting->id_voting,
