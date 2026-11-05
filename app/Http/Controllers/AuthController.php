@@ -5,12 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
     /**
-     * Handle user login authentication.
+     * Handle user login authentication and issue Laravel Sanctum personal access token.
      */
     public function login(Request $request)
     {
@@ -62,17 +61,15 @@ class AuthController extends Controller
             ], 401);
         }
 
-
-
-
-        // Token sesi unik
-        $token = hash('sha256', Str::random(40) . $user->id_user . time());
+        // Generate Personal Access Token via Laravel Sanctum
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'status'  => 'success',
-            'message' => 'Autentikasi berhasil.',
-            'token'   => $token,
-            'user'    => [
+            'status'     => 'success',
+            'message'    => 'Autentikasi berhasil.',
+            'token'      => $token,
+            'token_type' => 'Bearer',
+            'user'       => [
                 'id_user'     => $user->id_user,
                 'nim_nip'     => $user->nim_nip,
                 'nama'        => $user->nama,
@@ -84,18 +81,18 @@ class AuthController extends Controller
     }
 
     /**
-     * Get user profile info by ID or token.
+     * Get user profile info by Sanctum token or ID fallback.
      */
     public function me(Request $request)
     {
-        $id = $request->query('id_user');
-        if (!$id) {
-            return response()->json(['status' => 'error', 'message' => 'Parameter id_user diperlukan.'], 400);
+        $user = $request->user();
+
+        if (!$user && $request->query('id_user')) {
+            $user = User::find($request->query('id_user'));
         }
 
-        $user = User::find($id);
         if (!$user) {
-            return response()->json(['status' => 'error', 'message' => 'User tidak ditemukan.'], 404);
+            return response()->json(['status' => 'error', 'message' => 'User tidak ditemukan atau belum terautentikasi.'], 401);
         }
 
         return response()->json([
@@ -105,10 +102,14 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle user logout (stateless).
+     * Handle user logout (revoke active Sanctum token).
      */
-    public function logout()
+    public function logout(Request $request)
     {
+        if ($request->user()) {
+            $request->user()->currentAccessToken()->delete();
+        }
+
         return response()->json([
             'status'  => 'success',
             'message' => 'Logout berhasil.',
