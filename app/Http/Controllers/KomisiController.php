@@ -26,6 +26,10 @@ class KomisiController extends CrudController
                 return str_contains(strtolower($enrollment->jabatan_komisi ?? ''), 'ketua');
             });
 
+            $secretary = $komisi->enrollments->first(function ($enrollment) {
+                return str_contains(strtolower($enrollment->jabatan_komisi ?? ''), 'sekretaris');
+            });
+
             $code = strtoupper(str_replace('Komisi ', 'KOM-', $komisi->nama_komisi));
 
             return [
@@ -33,6 +37,8 @@ class KomisiController extends CrudController
                 'code' => $code ?: 'KOM',
                 'name' => $komisi->nama_komisi,
                 'lead' => $ketua?->user?->nama ?? 'Belum ditentukan',
+                'secretary' => $secretary?->user?->nama ?? 'Belum ditentukan',
+                'focus' => $komisi->deskripsi ?? 'Belum ada deskripsi komisi.',
                 'tupoksi' => $komisi->deskripsi ?? 'Belum ada deskripsi tugas pokok dan fungsi.',
                 'members_count' => $komisi->enrollments->count(),
                 'members' => $komisi->enrollments->map(function ($enrollment) {
@@ -53,4 +59,3 @@ class KomisiController extends CrudController
         ]);
     }
 }
-
