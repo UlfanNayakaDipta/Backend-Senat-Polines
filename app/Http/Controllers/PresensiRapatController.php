@@ -110,7 +110,7 @@ class PresensiRapatController extends Controller
     {
         $rapat = Rapat::findOrFail($id);
 
-        $kodeSesi = 'PLN-' . rand(100, 999);
+        $kodeSesi = Rapat::generateKodeSesi();
         $tokenQr = 'token-polines-' . strtolower(Str::slug($rapat->nama_agenda ?: 'rapat')) . '-' . Str::random(12);
 
         $rapat->update([
@@ -218,11 +218,19 @@ class PresensiRapatController extends Controller
     public function submitPresensi(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'id_user' => 'required|exists:users,id_user',
+            'id_user' => 'nullable|exists:users,id_user',
             'token_qr' => 'nullable|string',
             'kode_sesi' => 'nullable|string',
             'id_rapat' => 'nullable|integer',
         ]);
+
+        // Presensi selalu dicatat atas nama pemilik token, kecuali sekretariat
+        // yang boleh mengoreksi presensi anggota lain.
+        $actor = $request->user();
+        $privileged = in_array((string) $actor->role, ['admin', 'ketua_senat', 'sekretaris'], true);
+        $targetUserId = ($privileged && ! empty($validated['id_user']))
+            ? (int) $validated['id_user']
+            : (int) $actor->id_user;
 
         if (empty($validated['token_qr']) && empty($validated['kode_sesi'])) {
             return response()->json([
@@ -263,7 +271,7 @@ class PresensiRapatController extends Controller
             ], 422);
         }
 
-        $user = User::findOrFail($validated['id_user']);
+        $user = User::findOrFail($targetUserId);
 
         $undangan = AnggotaRapat::where('id_rapat', $rapat->id_rapat)
             ->where('id_user', $user->id_user)

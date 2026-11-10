@@ -87,7 +87,7 @@ class RapatController extends CrudController
             'tempat' => $validated['tempat'],
             'status' => $validated['status'] ?? 'Terjadwal',
             'token_qr' => 'token-qr-' . uniqid(),
-            'kode_sesi' => 'PLN-' . rand(100, 999),
+            'kode_sesi' => Rapat::generateKodeSesi(),
             'is_presensi_open' => false,
             'is_kuorum_locked' => false,
         ]);

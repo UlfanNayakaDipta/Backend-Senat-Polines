@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Rapat extends Model
 {
@@ -26,6 +27,19 @@ class Rapat extends Model
     public function kegiatan(): BelongsTo
     {
         return $this->belongsTo(Kegiatan::class, 'id_kegiatan', 'id_kegiatan');
+    }
+
+    /**
+     * Generate a unique, high-entropy session code (format: PLN-XXXXXX).
+     * The code is printed/shown next to the QR, so it must not be guessable.
+     */
+    public static function generateKodeSesi(): string
+    {
+        do {
+            $code = 'PLN-' . strtoupper(Str::random(6));
+        } while (static::where('kode_sesi', $code)->exists());
+
+        return $code;
     }
 
     public function user(): BelongsTo
