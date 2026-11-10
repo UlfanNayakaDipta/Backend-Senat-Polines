@@ -30,6 +30,9 @@ use App\Http\Controllers\RapatRekamanController;
 
 // Endpoint Publik untuk Frontend
 Route::get('committees', [KomisiController::class, 'publicCommittees']);
+Route::post('committees/members', [KomisiController::class, 'storeMember']);
+Route::put('committees/members/{id}', [KomisiController::class, 'updateMember']);
+Route::delete('committees/members/{id}', [KomisiController::class, 'destroyMember']);
 
 // Tambahkan middleware auth (mis. 'auth:sanctum') sesuai kebutuhan
 Route::group([], function () {
