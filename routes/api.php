@@ -202,7 +202,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('peraturan/{peraturan}', [PeraturanController::class, 'update']);
         Route::delete('peraturan/{peraturan}', [PeraturanController::class, 'destroy']);
 
-        // User Management
+        // User Management & Impersonation
+        Route::post('admin/impersonate/{id}', [AuthController::class, 'impersonate']);
         Route::apiResource('user', UserController::class);
     });
 });

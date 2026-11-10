@@ -115,4 +115,59 @@ class AuthController extends Controller
             'message' => 'Logout berhasil.',
         ]);
     }
+
+    /**
+     * Impersonate a user (Admin only).
+     */
+    public function impersonate(Request $request, $id)
+    {
+        $admin = $request->user();
+
+        if (!$admin || $admin->role !== 'admin') {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya administrator yang dapat melakukan impersonasi user.',
+            ], 403);
+        }
+
+        $targetUser = User::find($id);
+
+        if (!$targetUser) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'User target tidak ditemukan.',
+            ], 404);
+        }
+
+        if ((int) $targetUser->id_user === (int) $admin->id_user) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Tidak dapat melakukan impersonasi ke akun sendiri.',
+            ], 422);
+        }
+
+        // Generate personal access token for the target user
+        $token = $targetUser->createToken('impersonated_by_' . $admin->id_user)->plainTextToken;
+
+        return response()->json([
+            'status'     => 'success',
+            'message'    => 'Impersonasi berhasil dimulai.',
+            'token'      => $token,
+            'token_type' => 'Bearer',
+            'user'       => [
+                'id_user'     => $targetUser->id_user,
+                'nim_nip'     => $targetUser->nim_nip,
+                'nama'        => $targetUser->nama,
+                'email'       => $targetUser->email,
+                'role'        => $targetUser->role,
+                'foto_profil' => $targetUser->foto_profil,
+            ],
+            'impersonator' => [
+                'id_user' => $admin->id_user,
+                'nama'    => $admin->nama,
+                'email'   => $admin->email,
+                'role'    => $admin->role,
+            ],
+        ]);
+    }
 }
