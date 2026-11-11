@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class AuthController extends Controller
 {
     /**
-     * Handle user login authentication.
+     * Handle user login authentication and issue Laravel Sanctum personal access token.
      */
     public function login(Request $request)
     {
@@ -63,32 +63,32 @@ class AuthController extends Controller
             ], 401);
         }
 
+        // Generate Personal Access Token via Laravel Sanctum
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-
-
-        // Issue an opaque bearer token; only its SHA-256 hash is stored.
-        $token = Str::random(64);
+        // Also issue custom ApiToken for Satria's middleware compatibility
         $expiresAt = now()->addHours((int) env('API_TOKEN_TTL_HOURS', 12));
+        try {
+            ApiToken::create([
+                'id_user' => $user->id_user,
+                'token_hash' => hash('sha256', $token),
+                'name' => substr((string) $request->userAgent(), 0, 255),
+                'expires_at' => $expiresAt,
+            ]);
 
-        ApiToken::create([
-            'id_user' => $user->id_user,
-            'token_hash' => hash('sha256', $token),
-            'name' => substr((string) $request->userAgent(), 0, 255),
-            'expires_at' => $expiresAt,
-        ]);
-
-        // Best-effort cleanup of this user's expired tokens.
-        ApiToken::where('id_user', $user->id_user)
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '<', now())
-            ->delete();
+            ApiToken::where('id_user', $user->id_user)
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '<', now())
+                ->delete();
+        } catch (\Throwable) {}
 
         return response()->json([
-            'status'  => 'success',
-            'message' => 'Autentikasi berhasil.',
-            'token'   => $token,
+            'status'     => 'success',
+            'message'    => 'Autentikasi berhasil.',
+            'token'      => $token,
+            'token_type' => 'Bearer',
             'expires_at' => $expiresAt->toIso8601String(),
-            'user'    => [
+            'user'       => [
                 'id_user'     => $user->id_user,
                 'nim_nip'     => $user->nim_nip,
                 'nama'        => $user->nama,
@@ -100,14 +100,18 @@ class AuthController extends Controller
     }
 
     /**
-     * Get the profile of the currently authenticated user.
+     * Get user profile info by Sanctum token or ID fallback.
      */
     public function me(Request $request)
     {
         $user = $request->user();
 
-        if (! $user) {
-            return response()->json(['status' => 'error', 'message' => 'Tidak terautentikasi.'], 401);
+        if (!$user && $request->query('id_user')) {
+            $user = User::find($request->query('id_user'));
+        }
+
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User tidak ditemukan atau belum terautentikasi.'], 401);
         }
 
         return response()->json([
@@ -117,12 +121,15 @@ class AuthController extends Controller
     }
 
     /**
-     * Revoke the bearer token used for this request.
+     * Handle user logout (revoke active Sanctum token and ApiToken).
      */
     public function logout(Request $request)
     {
-        $token = $request->attributes->get('api_token');
+        if ($request->user() && method_exists($request->user(), 'currentAccessToken') && $request->user()->currentAccessToken()) {
+            $request->user()->currentAccessToken()->delete();
+        }
 
+        $token = $request->attributes->get('api_token');
         if ($token) {
             $token->delete();
         }
@@ -130,6 +137,61 @@ class AuthController extends Controller
         return response()->json([
             'status'  => 'success',
             'message' => 'Logout berhasil.',
+        ]);
+    }
+
+    /**
+     * Impersonate a user (Admin only).
+     */
+    public function impersonate(Request $request, $id)
+    {
+        $admin = $request->user();
+
+        if (!$admin || $admin->role !== 'admin') {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya administrator yang dapat melakukan impersonasi user.',
+            ], 403);
+        }
+
+        $targetUser = User::find($id);
+
+        if (!$targetUser) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'User target tidak ditemukan.',
+            ], 404);
+        }
+
+        if ((int) $targetUser->id_user === (int) $admin->id_user) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Tidak dapat melakukan impersonasi ke akun sendiri.',
+            ], 422);
+        }
+
+        // Generate personal access token for the target user
+        $token = $targetUser->createToken('impersonated_by_' . $admin->id_user)->plainTextToken;
+
+        return response()->json([
+            'status'     => 'success',
+            'message'    => 'Impersonasi berhasil dimulai.',
+            'token'      => $token,
+            'token_type' => 'Bearer',
+            'user'       => [
+                'id_user'     => $targetUser->id_user,
+                'nim_nip'     => $targetUser->nim_nip,
+                'nama'        => $targetUser->nama,
+                'email'       => $targetUser->email,
+                'role'        => $targetUser->role,
+                'foto_profil' => $targetUser->foto_profil,
+            ],
+            'impersonator' => [
+                'id_user' => $admin->id_user,
+                'nama'    => $admin->nama,
+                'email'   => $admin->email,
+                'role'    => $admin->role,
+            ],
         ]);
     }
 }

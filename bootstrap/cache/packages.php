@@ -10,6 +10,13 @@
       0 => 'L5Swagger\\L5SwaggerServiceProvider',
     ),
   ),
+  'laravel/sanctum' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Laravel\\Sanctum\\SanctumServiceProvider',
+    ),
+  ),
   'nesbot/carbon' => 
   array (
     'providers' => 
