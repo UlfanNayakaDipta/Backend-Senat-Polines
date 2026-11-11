@@ -28,10 +28,11 @@ use App\Http\Controllers\RapatLampiranController;
 use App\Http\Controllers\RapatBerbagiController;
 use App\Http\Controllers\RapatRekamanController;
 
-// Tambahkan middleware auth (mis. 'auth:sanctum') sesuai kebutuhan
-Route::group([], function () {
+// Login is the only unauthenticated write; everything else needs a bearer token.
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+
+Route::middleware(['api.token', 'throttle:120,1'])->group(function () {
     // Autentikasi Pengguna
-    Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
 
@@ -84,8 +85,10 @@ Route::group([], function () {
     Route::apiResource('suara-voting', SuaraVotingController::class);
     Route::apiResource('peraturan', PeraturanController::class);
     Route::apiResource('berita', BeritaController::class);
-    Route::apiResource('user', UserController::class);
+    Route::apiResource('user', UserController::class)
+        ->middleware('api.role:admin,ketua_senat,sekretaris');
 
     // AI Chatbot Aspirasi & Layanan Informasi Senat
-    Route::post('chatbot/chat', [\App\Http\Controllers\ChatbotController::class, 'chat']);
+    Route::post('chatbot/chat', [\App\Http\Controllers\ChatbotController::class, 'chat'])
+        ->middleware('throttle:20,1');
 });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ApiToken;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -46,9 +47,9 @@ class AuthController extends Controller
         if ($isBcrypt) {
             $passwordValid = Hash::check($password, $user->password);
         } else {
-            // Fallback pintar: jika diinput teks polos di phpMyAdmin, cek teks langsung
-            if ((string) $user->password === $password) {
-                // Otomatis konversi dan simpan ulang sebagai Bcrypt hash di database!
+            // Legacy row stored as plaintext (imported directly via phpMyAdmin).
+            // Compare in constant time, then upgrade the row to a bcrypt hash.
+            if (hash_equals((string) $user->password, $password)) {
                 $user->password = Hash::make($password);
                 $user->save();
                 $passwordValid = true;
@@ -65,13 +66,28 @@ class AuthController extends Controller
 
 
 
-        // Token sesi unik
-        $token = hash('sha256', Str::random(40) . $user->id_user . time());
+        // Issue an opaque bearer token; only its SHA-256 hash is stored.
+        $token = Str::random(64);
+        $expiresAt = now()->addHours((int) env('API_TOKEN_TTL_HOURS', 12));
+
+        ApiToken::create([
+            'id_user' => $user->id_user,
+            'token_hash' => hash('sha256', $token),
+            'name' => substr((string) $request->userAgent(), 0, 255),
+            'expires_at' => $expiresAt,
+        ]);
+
+        // Best-effort cleanup of this user's expired tokens.
+        ApiToken::where('id_user', $user->id_user)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<', now())
+            ->delete();
 
         return response()->json([
             'status'  => 'success',
             'message' => 'Autentikasi berhasil.',
             'token'   => $token,
+            'expires_at' => $expiresAt->toIso8601String(),
             'user'    => [
                 'id_user'     => $user->id_user,
                 'nim_nip'     => $user->nim_nip,
@@ -84,18 +100,14 @@ class AuthController extends Controller
     }
 
     /**
-     * Get user profile info by ID or token.
+     * Get the profile of the currently authenticated user.
      */
     public function me(Request $request)
     {
-        $id = $request->query('id_user');
-        if (!$id) {
-            return response()->json(['status' => 'error', 'message' => 'Parameter id_user diperlukan.'], 400);
-        }
+        $user = $request->user();
 
-        $user = User::find($id);
-        if (!$user) {
-            return response()->json(['status' => 'error', 'message' => 'User tidak ditemukan.'], 404);
+        if (! $user) {
+            return response()->json(['status' => 'error', 'message' => 'Tidak terautentikasi.'], 401);
         }
 
         return response()->json([
@@ -105,10 +117,16 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle user logout (stateless).
+     * Revoke the bearer token used for this request.
      */
-    public function logout()
+    public function logout(Request $request)
     {
+        $token = $request->attributes->get('api_token');
+
+        if ($token) {
+            $token->delete();
+        }
+
         return response()->json([
             'status'  => 'success',
             'message' => 'Logout berhasil.',
