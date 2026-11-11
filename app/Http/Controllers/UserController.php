@@ -19,7 +19,7 @@ class UserController extends CrudController
             'nama' => ['required','string','max:255'],
             'email' => ['required','email',Rule::unique('users','email')->ignore($id, 'id_user')],
             'password' => ['required','string','min:8'],
-            'role' => ['required','string','max:50'],
+            'role' => ['required','string',Rule::in(['admin','ketua_senat','sekretaris','anggota','dosen','mahasiswa'])],
             'foto_profil' => ['nullable','string','max:255'],
         ];
     }
