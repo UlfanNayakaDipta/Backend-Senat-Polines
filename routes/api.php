@@ -78,7 +78,6 @@ Route::get('voting/{voting}', [VotingController::class, 'show']);
 Route::get('voting/{id}/rekap', [VotingController::class, 'rekap']);
 Route::get('opsi-voting', [OpsiVotingController::class, 'index']);
 Route::get('opsi-voting/{opsi_voting}', [OpsiVotingController::class, 'show']);
-Route::get('suara-voting', [SuaraVotingController::class, 'index']);
 Route::get('enrollment', [EnrollmentController::class, 'index']);
 Route::get('anggota-rapat', [AnggotaRapatController::class, 'index']);
 Route::get('anggota-kegiatan', [AnggotaKegiatanController::class, 'index']);
@@ -111,7 +110,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('rapat/{id_rapat}/berbagi', [RapatBerbagiController::class, 'store']);
     Route::delete('rapat/{id_rapat}/berbagi/{id_berbagi}', [RapatBerbagiController::class, 'destroy']);
 
-    // Voting suara
+    // Voting suara — ballot data is not public (secret ballot)
+    Route::get('suara-voting', [SuaraVotingController::class, 'index'])
+        ->middleware('role:admin,ketua_senat,sekretaris');
     Route::post('suara-voting', [SuaraVotingController::class, 'store']);
 
     /*
