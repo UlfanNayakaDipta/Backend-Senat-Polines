@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Berita;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class BeritaGalleryTest extends TestCase
@@ -13,7 +14,9 @@ class BeritaGalleryTest extends TestCase
 
     public function test_berita_api_persists_multiple_images_and_attachments(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
+        Sanctum::actingAs($user);
+
         $gallery = [
             'https://example.test/berita/foto-satu.jpg',
             'https://example.test/berita/foto-dua.jpg',
@@ -44,7 +47,8 @@ class BeritaGalleryTest extends TestCase
 
     public function test_berita_api_rejects_non_http_media_urls(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
+        Sanctum::actingAs($user);
 
         $this->postJson('/api/berita', [
             'id_user' => $user->id_user,
