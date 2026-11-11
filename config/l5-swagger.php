@@ -70,10 +70,10 @@ return [
              *   'api' => ['auth:sanctum'],
              */
             'middleware' => [
-                'api' => [],
-                'asset' => [],
-                'docs' => [],
-                'oauth2_callback' => [],
+                'api' => ['local.only'],
+                'asset' => ['local.only'],
+                'docs' => ['local.only'],
+                'oauth2_callback' => ['local.only'],
             ],
 
             /*
