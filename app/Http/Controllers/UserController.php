@@ -41,6 +41,7 @@ class UserController extends CrudController
         path: '/user',
         summary: 'Tambah Pengguna Baru',
         tags: ['User'],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -84,6 +85,7 @@ class UserController extends CrudController
         path: '/user/{id}',
         summary: 'Perbarui Data Pengguna',
         tags: ['User'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
@@ -108,6 +110,7 @@ class UserController extends CrudController
         path: '/user/{id}',
         summary: 'Hapus Pengguna',
         tags: ['User'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
             new OA\Response(response: 204, description: 'Pengguna berhasil dihapus')

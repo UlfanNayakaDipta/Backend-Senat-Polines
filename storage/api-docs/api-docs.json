@@ -163,7 +163,12 @@
                     "200": {
                         "description": "Aspirasi berhasil diperbarui"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -185,7 +190,12 @@
                     "204": {
                         "description": "Aspirasi berhasil dihapus"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/login": {
@@ -413,7 +423,12 @@
                     "422": {
                         "description": "Validasi gagal"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/berita/{id}": {
@@ -509,7 +524,12 @@
                     "200": {
                         "description": "Berita berhasil diperbarui"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -531,7 +551,12 @@
                     "204": {
                         "description": "Berita berhasil dihapus"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/chatbot/chat": {
@@ -1783,7 +1808,12 @@
                     "422": {
                         "description": "Validasi gagal"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/peraturan/{id}": {
@@ -1852,7 +1882,12 @@
                     "200": {
                         "description": "Peraturan berhasil diperbarui"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -1874,7 +1909,12 @@
                     "204": {
                         "description": "Peraturan berhasil dihapus"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/periode-senat": {
@@ -2090,7 +2130,12 @@
                     "404": {
                         "description": "Data rapat tidak ditemukan"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/rapat/{id}/freeze-presensi": {
@@ -2119,7 +2164,12 @@
                     "404": {
                         "description": "Data rapat tidak ditemukan"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/rapat/presensi": {
@@ -2171,7 +2221,12 @@
                     "404": {
                         "description": "Token QR / Sesi tidak ditemukan"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/rapat/{id}/live-attendance": {
@@ -2200,7 +2255,12 @@
                     "404": {
                         "description": "Data rapat tidak ditemukan"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/rapat/{id}/anggota/{id_user}/validasi": {
@@ -2270,7 +2330,12 @@
                     "404": {
                         "description": "Rapat atau anggota tidak ditemukan"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/rapat/{id_rapat}/berbagi": {
@@ -2593,7 +2658,12 @@
                     "422": {
                         "description": "Validasi gagal"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/rapat/{id}": {
@@ -2669,7 +2739,12 @@
                     "200": {
                         "description": "Rapat berhasil diperbarui"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -2691,7 +2766,12 @@
                     "204": {
                         "description": "Rapat berhasil dihapus"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/rapat/{id_rapat}/lampiran": {
@@ -3333,7 +3413,12 @@
                     "422": {
                         "description": "Validasi data pengguna gagal"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/user/{id}": {
@@ -3406,7 +3491,12 @@
                     "200": {
                         "description": "Pengguna berhasil diperbarui"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -3428,7 +3518,12 @@
                     "204": {
                         "description": "Pengguna berhasil dihapus"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/voting": {
@@ -3527,10 +3622,21 @@
                     "201": {
                         "description": "Sesi voting berhasil dibuat"
                     },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak (hanya admin/ketua senat/sekretaris)"
+                    },
                     "422": {
                         "description": "Validasi gagal"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/voting/{id}/buka": {
@@ -3554,8 +3660,22 @@
                 "responses": {
                     "200": {
                         "description": "Sesi voting berhasil dibuka"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak (hanya admin/ketua senat/sekretaris)"
+                    },
+                    "404": {
+                        "description": "Sesi voting tidak ditemukan"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/voting/{id}/tutup": {
@@ -3579,8 +3699,22 @@
                 "responses": {
                     "200": {
                         "description": "Sesi voting berhasil ditutup"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak (hanya admin/ketua senat/sekretaris)"
+                    },
+                    "404": {
+                        "description": "Sesi voting tidak ditemukan"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/voting/{id}/rekap": {
@@ -3678,8 +3812,22 @@
                 "responses": {
                     "200": {
                         "description": "Data voting berhasil diperbarui"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak (hanya admin/ketua senat/sekretaris)"
+                    },
+                    "404": {
+                        "description": "Data tidak ditemukan"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -3700,8 +3848,22 @@
                 "responses": {
                     "204": {
                         "description": "Voting berhasil dihapus"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak (hanya admin/ketua senat/sekretaris)"
+                    },
+                    "404": {
+                        "description": "Data tidak ditemukan"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         }
     },

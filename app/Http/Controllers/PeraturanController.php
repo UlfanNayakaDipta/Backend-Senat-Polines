@@ -72,6 +72,7 @@ class PeraturanController extends CrudController
         path: '/peraturan',
         summary: 'Tambah Dokumen Peraturan Baru',
         tags: ['Peraturan & Dokumen'],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -116,6 +117,7 @@ class PeraturanController extends CrudController
         path: '/peraturan/{id}',
         summary: 'Perbarui Dokumen Peraturan',
         tags: ['Peraturan & Dokumen'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
@@ -139,6 +141,7 @@ class PeraturanController extends CrudController
         path: '/peraturan/{id}',
         summary: 'Hapus Peraturan',
         tags: ['Peraturan & Dokumen'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
             new OA\Response(response: 204, description: 'Peraturan berhasil dihapus')

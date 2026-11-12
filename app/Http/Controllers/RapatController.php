@@ -48,6 +48,7 @@ class RapatController extends CrudController
         path: '/rapat',
         summary: 'Tambah Agenda Rapat Baru',
         tags: ['Rapat & Sidang'],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -139,6 +140,7 @@ class RapatController extends CrudController
         path: '/rapat/{id}',
         summary: 'Perbarui Agenda Rapat',
         tags: ['Rapat & Sidang'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
@@ -164,6 +166,7 @@ class RapatController extends CrudController
         path: '/rapat/{id}',
         summary: 'Hapus Agenda Rapat',
         tags: ['Rapat & Sidang'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
             new OA\Response(response: 204, description: 'Rapat berhasil dihapus')

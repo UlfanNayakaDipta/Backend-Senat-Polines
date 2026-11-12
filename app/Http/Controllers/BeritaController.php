@@ -44,6 +44,7 @@ class BeritaController extends CrudController
         path: '/berita',
         summary: 'Publikasi Berita Baru',
         tags: ['Berita'],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -99,6 +100,7 @@ class BeritaController extends CrudController
         path: '/berita/{id}',
         summary: 'Perbarui Berita',
         tags: ['Berita'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
@@ -135,6 +137,7 @@ class BeritaController extends CrudController
         path: '/berita/{id}',
         summary: 'Hapus Berita',
         tags: ['Berita'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
             new OA\Response(response: 204, description: 'Berita berhasil dihapus')

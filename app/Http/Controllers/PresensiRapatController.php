@@ -86,6 +86,7 @@ class PresensiRapatController extends Controller
         summary: 'Generate QR Code & Kode Sesi Presensi Rapat',
         description: 'Membuka gerbang presensi rapat dan menghasilkan token QR dinamis serta kode sesi presensi 6 digit.',
         tags: ['Presensi Rapat'],
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'id',
@@ -141,6 +142,7 @@ class PresensiRapatController extends Controller
         summary: 'Bekukan Presensi dan Kunci Status Kuorum Sidang',
         description: 'Menutup sesi presensi sehingga QR Code kedaluwarsa dan status kuorum terkunci.',
         tags: ['Presensi Rapat'],
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'id',
@@ -188,6 +190,7 @@ class PresensiRapatController extends Controller
         summary: 'Submit Presensi Kehadiran Anggota Senat',
         description: 'Mencatat kehadiran anggota senat melalui pemindaian QR code atau input kode sesi.',
         tags: ['Presensi Rapat'],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -327,6 +330,7 @@ class PresensiRapatController extends Controller
         summary: 'Monitor Kehadiran Sidang dan Kuorum Real-time',
         description: 'Mengambil daftar anggota rapat beserta status kehadiran (hadir/izin/menunggu), waktu scan, dan persentase kuorum.',
         tags: ['Presensi Rapat'],
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'id',
@@ -393,6 +397,7 @@ class PresensiRapatController extends Controller
         summary: 'Validasi Manual Kehadiran Anggota oleh Admin/Sekretariat',
         description: 'Mengubah status presensi anggota secara manual disertai catatan resmi admin.',
         tags: ['Presensi Rapat'],
+        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'id',

@@ -83,6 +83,7 @@ class AspirasiController extends CrudController
         path: '/aspirasi/{id}',
         summary: 'Perbarui Status/Isi Aspirasi',
         tags: ['Aspirasi'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
@@ -105,6 +106,7 @@ class AspirasiController extends CrudController
         path: '/aspirasi/{id}',
         summary: 'Hapus Aspirasi',
         tags: ['Aspirasi'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
             new OA\Response(response: 204, description: 'Aspirasi berhasil dihapus')

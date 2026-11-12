@@ -66,6 +66,7 @@ class VotingController extends CrudController
         summary: 'Buat Sesi E-Voting Baru',
         description: 'Membuat agenda pemungutan suara sidang senat beserta opsi pilihan (default: Setuju, Tidak Setuju, Abstain).',
         tags: ['Voting'],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -86,6 +87,8 @@ class VotingController extends CrudController
         ),
         responses: [
             new OA\Response(response: 201, description: 'Sesi voting berhasil dibuat'),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
             new OA\Response(response: 422, description: 'Validasi gagal')
         ]
     )]
@@ -124,9 +127,13 @@ class VotingController extends CrudController
         summary: 'Buka Sesi Pemungutan Suara',
         description: 'Mengubah status voting menjadi dibuka sehingga anggota senat dapat memberikan suara.',
         tags: ['Voting'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
-            new OA\Response(response: 200, description: 'Sesi voting berhasil dibuka')
+            new OA\Response(response: 200, description: 'Sesi voting berhasil dibuka'),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
+            new OA\Response(response: 404, description: 'Sesi voting tidak ditemukan')
         ]
     )]
     public function buka($id): JsonResponse
@@ -155,9 +162,13 @@ class VotingController extends CrudController
         summary: 'Tutup Sesi Pemungutan Suara',
         description: 'Menutup sesi voting sidang senat sehingga tidak menerima suara baru.',
         tags: ['Voting'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
-            new OA\Response(response: 200, description: 'Sesi voting berhasil ditutup')
+            new OA\Response(response: 200, description: 'Sesi voting berhasil ditutup'),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
+            new OA\Response(response: 404, description: 'Sesi voting tidak ditemukan')
         ]
     )]
     public function tutup($id): JsonResponse
@@ -239,6 +250,7 @@ class VotingController extends CrudController
         path: '/voting/{id}',
         summary: 'Perbarui Sesi Voting',
         tags: ['Voting'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
@@ -250,7 +262,10 @@ class VotingController extends CrudController
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Data voting berhasil diperbarui')
+            new OA\Response(response: 200, description: 'Data voting berhasil diperbarui'),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
+            new OA\Response(response: 404, description: 'Data tidak ditemukan')
         ]
     )]
     public function update(Request $request, $id)
@@ -262,9 +277,13 @@ class VotingController extends CrudController
         path: '/voting/{id}',
         summary: 'Hapus Sesi Voting',
         tags: ['Voting'],
+        security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
-            new OA\Response(response: 204, description: 'Voting berhasil dihapus')
+            new OA\Response(response: 204, description: 'Voting berhasil dihapus'),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
+            new OA\Response(response: 404, description: 'Data tidak ditemukan')
         ]
     )]
     public function destroy($id)
