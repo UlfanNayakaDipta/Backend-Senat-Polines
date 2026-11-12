@@ -27,9 +27,13 @@ class SuaraVotingController extends CrudController
     #[OA\Get(
         path: '/suara-voting',
         summary: 'Daftar Suara Masuk (E-Voting)',
+        description: 'Daftar rincian suara pemungutan suara sidang. Dibatasi khusus peran sekretariat dan administrator untuk melindungi kerahasiaan pilihan pemilih.',
         tags: ['Voting'],
+        security: [['bearerAuth' => []]],
         responses: [
-            new OA\Response(response: 200, description: 'Daftar perolehan suara terpaginasi')
+            new OA\Response(response: 200, description: 'Daftar perolehan suara terpaginasi'),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (hanya sekretariat/admin)')
         ]
     )]
     public function index()
@@ -42,6 +46,7 @@ class SuaraVotingController extends CrudController
         summary: 'Submit Suara E-Voting Sidang Senat',
         description: 'Mencatat pilihan suara anggota senat pada sesi voting yang aktif (satu anggota satu suara).',
         tags: ['Voting'],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(

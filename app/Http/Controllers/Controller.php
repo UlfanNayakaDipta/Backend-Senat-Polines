@@ -30,16 +30,28 @@ use OpenApi\Attributes as OA;
     url: "http://127.0.0.1:3000/api",
     description: "Alternative Port 3000"
 )]
+#[OA\SecurityScheme(
+    securityScheme: "bearerAuth",
+    type: "http",
+    scheme: "bearer",
+    bearerFormat: "JWT",
+    description: "Masukkan token autentikasi Sanctum (Bearer <token>)"
+)]
+#[OA\Tag(name: "Autentikasi & Akun", description: "Autentikasi sesi pengguna, profil saat ini, dan fitur impersonasi administrator")]
+#[OA\Tag(name: "Komisi & Anggota Senat", description: "Direktori komisi Senat Polines, susunan pimpinan & anggota, serta manajemen keanggotaan")]
 #[OA\Tag(name: "Presensi Rapat", description: "Sistem Presensi QR Code & Monitoring Kuorum Sidang Real-time")]
 #[OA\Tag(name: "Rapat & Sidang", description: "Manajemen Agenda Rapat dan Sidang Senat")]
+#[OA\Tag(name: "Workspace Rapat", description: "Ruang kerja anggota rapat: catatan risalah, lampiran dokumen, dan berbagi tautan")]
+#[OA\Tag(name: "Rekaman & AI Notulensi", description: "Pengunggahan rekaman sidang audio/video hingga 1GB, transkripsi AI Whisper, dan notulensi otomatis")]
+#[OA\Tag(name: "Notulensi & Risalah", description: "Manajemen notulensi, risalah keputusan sidang, dan status pengesahan")]
+#[OA\Tag(name: "Voting", description: "Pemungutan Suara & E-Voting Sidang Senat")]
 #[OA\Tag(name: "AI Chatbot", description: "Layanan Tanya-Jawab Aspirasi & Regulasi Senat Berbasis AI")]
 #[OA\Tag(name: "Aspirasi", description: "Pengelolaan Saluran Aspirasi Sivitas Akademika")]
-#[OA\Tag(name: "Voting", description: "Pemungutan Suara & E-Voting Sidang Senat")]
-#[OA\Tag(name: "Kegiatan", description: "Agenda dan Kegiatan Senat Polines")]
-#[OA\Tag(name: "Struktur Organisasi & Komisi", description: "Komisi dan Struktur Kepengurusan Senat")]
 #[OA\Tag(name: "Peraturan & Dokumen", description: "Produk Hukum dan Peraturan Senat Akademik")]
 #[OA\Tag(name: "Berita", description: "Publikasi Berita dan Warta Senat")]
+#[OA\Tag(name: "Kegiatan", description: "Agenda dan Kegiatan Senat Polines")]
 #[OA\Tag(name: "User", description: "Manajemen Pengguna dan Sivitas Akademika")]
+#[OA\Tag(name: "Master Data", description: "Master data periode senat, jenis rapat, kategori aspirasi, dan struktur organisasi")]
 abstract class Controller
 {
     //

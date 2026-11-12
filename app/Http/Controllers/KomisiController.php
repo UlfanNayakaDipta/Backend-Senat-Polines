@@ -8,6 +8,7 @@ use App\Models\Enrollment;
 use App\Models\PeriodeSenat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 
 class KomisiController extends CrudController
 {
@@ -22,6 +23,108 @@ class KomisiController extends CrudController
         ];
     }
 
+    #[OA\Get(
+        path: '/komisi',
+        summary: 'Daftar Master Data Komisi Senat',
+        description: 'Mengambil daftar seluruh komisi Senat Akademik Politeknik Negeri Semarang.',
+        tags: ['Komisi & Anggota Senat'],
+        responses: [
+            new OA\Response(response: 200, description: 'Daftar komisi berhasil dimuat')
+        ]
+    )]
+    public function index()
+    {
+        return parent::index();
+    }
+
+    #[OA\Post(
+        path: '/komisi',
+        summary: 'Tambah Master Data Komisi Baru',
+        description: 'Membuat komisi senat baru.',
+        tags: ['Komisi & Anggota Senat'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['nama_komisi'],
+                properties: [
+                    new OA\Property(property: 'nama_komisi', type: 'string', example: 'Komisi I (Bidang Akademik)'),
+                    new OA\Property(property: 'deskripsi', type: 'string', example: 'Bidang Pembelajaran, Kurikulum, dan Penjaminan Mutu')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Komisi berhasil dibuat'),
+            new OA\Response(response: 422, description: 'Validasi data komisi gagal')
+        ]
+    )]
+    public function store(Request $request)
+    {
+        return parent::store($request);
+    }
+
+    #[OA\Get(
+        path: '/komisi/{id}',
+        summary: 'Detail Data Komisi Senat',
+        tags: ['Komisi & Anggota Senat'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Detail data komisi'),
+            new OA\Response(response: 404, description: 'Komisi tidak ditemukan')
+        ]
+    )]
+    public function show($id)
+    {
+        return parent::show($id);
+    }
+
+    #[OA\Put(
+        path: '/komisi/{id}',
+        summary: 'Perbarui Data Komisi Senat',
+        tags: ['Komisi & Anggota Senat'],
+        security: [['bearerAuth' => []]],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'nama_komisi', type: 'string', example: 'Komisi I (Akademik)'),
+                    new OA\Property(property: 'deskripsi', type: 'string', example: 'Fokus kurikulum dan pembelajaran')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Komisi berhasil diperbarui')
+        ]
+    )]
+    public function update(Request $request, $id)
+    {
+        return parent::update($request, $id);
+    }
+
+    #[OA\Delete(
+        path: '/komisi/{id}',
+        summary: 'Hapus Data Komisi Senat',
+        tags: ['Komisi & Anggota Senat'],
+        security: [['bearerAuth' => []]],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        responses: [
+            new OA\Response(response: 204, description: 'Komisi berhasil dihapus')
+        ]
+    )]
+    public function destroy($id)
+    {
+        return parent::destroy($id);
+    }
+
+    #[OA\Get(
+        path: '/committees',
+        summary: 'Direktori Publik Komisi Senat & Anggota',
+        description: 'Endpoint publik untuk halaman direktori komisi frontend. Mengembalikan seluruh komisi fungsional dengan susunan Ketua, Sekretaris, daftar Anggota lengkap, NIP, email, jabatan, serta fokus mandat.',
+        tags: ['Komisi & Anggota Senat'],
+        responses: [
+            new OA\Response(response: 200, description: 'Data direktori komisi dan anggota berhasil dimuat')
+        ]
+    )]
     public function publicCommittees()
     {
         $komisis = Komisi::with(['enrollments.user'])->get();
@@ -66,6 +169,31 @@ class KomisiController extends CrudController
         ]);
     }
 
+    #[OA\Post(
+        path: '/committees/members',
+        summary: 'Tambah Anggota ke Komisi Senat',
+        description: 'Mendaftarkan anggota/dosen ke dalam komisi tertentu beserta jabatannya.',
+        tags: ['Komisi & Anggota Senat'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['nama', 'id_komisi', 'jabatan_komisi'],
+                properties: [
+                    new OA\Property(property: 'nama', type: 'string', example: 'Dr. Sukamto, S.Kom., M.T.'),
+                    new OA\Property(property: 'nim_nip', type: 'string', example: '197101172003121001'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'senat1@senat.polines.ac.id'),
+                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-1', description: 'ID numerik komisi atau kode komisi (KOM-1 s.d. KOM-5)'),
+                    new OA\Property(property: 'jabatan_komisi', type: 'string', example: 'Ketua', description: 'Jabatan dalam komisi (Ketua, Sekretaris, Anggota)'),
+                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Anggota berhasil ditambahkan ke komisi'),
+            new OA\Response(response: 422, description: 'Validasi data gagal')
+        ]
+    )]
     public function storeMember(Request $request)
     {
         $validated = $request->validate([
@@ -156,6 +284,34 @@ class KomisiController extends CrudController
         ], 201);
     }
 
+    #[OA\Put(
+        path: '/committees/members/{id}',
+        summary: 'Perbarui Data/Jabatan Anggota Komisi',
+        description: 'Memperbarui informasi nama, NIP, email, mutasi komisi, atau perubahan jabatan anggota.',
+        tags: ['Komisi & Anggota Senat'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID Enrollment, ID User, atau slug nama anggota', schema: new OA\Schema(type: 'string', example: '1'))
+        ],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'nama', type: 'string', example: 'Dr. Sukamto, S.Kom., M.T.'),
+                    new OA\Property(property: 'nama_lama', type: 'string', nullable: true),
+                    new OA\Property(property: 'nim_nip', type: 'string', example: '197101172003121001'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'senat1@senat.polines.ac.id'),
+                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-1'),
+                    new OA\Property(property: 'jabatan_komisi', type: 'string', example: 'Ketua'),
+                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true)
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Data anggota berhasil diperbarui'),
+            new OA\Response(response: 404, description: 'Data anggota tidak ditemukan'),
+            new OA\Response(response: 422, description: 'Validasi data gagal')
+        ]
+    )]
     public function updateMember(Request $request, $id)
     {
         $validated = $request->validate([
@@ -275,6 +431,22 @@ class KomisiController extends CrudController
         ], 404);
     }
 
+    #[OA\Delete(
+        path: '/committees/members/{id}',
+        summary: 'Hapus Anggota dari Komisi Senat',
+        description: 'Menghapus penugasan (enrollment) anggota dari sebuah komisi.',
+        tags: ['Komisi & Anggota Senat'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID Enrollment, ID User, atau slug nama anggota', schema: new OA\Schema(type: 'string', example: '1')),
+            new OA\Parameter(name: 'nama', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'committee_code', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'KOM-1'))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Anggota berhasil dihapus dari komisi'),
+            new OA\Response(response: 404, description: 'Data anggota tidak ditemukan')
+        ]
+    )]
     public function destroyMember(Request $request, $id)
     {
         $enrollment = null;

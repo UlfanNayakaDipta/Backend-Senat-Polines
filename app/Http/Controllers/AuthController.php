@@ -7,12 +7,34 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 
 class AuthController extends Controller
 {
     /**
      * Handle user login authentication and issue Laravel Sanctum personal access token.
      */
+    #[OA\Post(
+        path: '/login',
+        summary: 'Autentikasi Login Pengguna',
+        description: 'Menerima NIP atau Email dan kata sandi, memvalidasi kredensial, dan mengembalikan Bearer token Sanctum beserta data profil pengguna.',
+        tags: ['Autentikasi & Akun'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['password'],
+                properties: [
+                    new OA\Property(property: 'identifier', type: 'string', example: '197101172003121001', description: 'NIP atau alamat email terdaftar'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'password123', description: 'Kata sandi pengguna')
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Autentikasi berhasil, token diterbitkan'),
+            new OA\Response(response: 401, description: 'Kredensial NIP/Email atau kata sandi tidak valid'),
+            new OA\Response(response: 422, description: 'NIP/Email atau kata sandi tidak boleh kosong')
+        ]
+    )]
     public function login(Request $request)
     {
         $identifier = trim($request->input('identifier') ?? $request->input('email') ?? $request->input('nim_nip') ?? '');
@@ -102,6 +124,17 @@ class AuthController extends Controller
     /**
      * Get user profile info by Sanctum token or ID fallback.
      */
+    #[OA\Get(
+        path: '/me',
+        summary: 'Informasi Profil Pengguna Aktif',
+        description: 'Mengambil profil lengkap pengguna yang sedang terautentikasi melalui Bearer token.',
+        tags: ['Autentikasi & Akun'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Data profil pengguna yang sedang login'),
+            new OA\Response(response: 401, description: 'Pengguna belum terautentikasi atau token tidak valid')
+        ]
+    )]
     public function me(Request $request)
     {
         $user = $request->user();
@@ -123,6 +156,17 @@ class AuthController extends Controller
     /**
      * Handle user logout (revoke active Sanctum token and ApiToken).
      */
+    #[OA\Post(
+        path: '/logout',
+        summary: 'Logout Pengguna',
+        description: 'Mencabut token sesi aktif Laravel Sanctum dan ApiToken milik pengguna saat ini.',
+        tags: ['Autentikasi & Akun'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Logout berhasil, token akses dicabut'),
+            new OA\Response(response: 401, description: 'Belum terautentikasi')
+        ]
+    )]
     public function logout(Request $request)
     {
         if ($request->user() && method_exists($request->user(), 'currentAccessToken') && $request->user()->currentAccessToken()) {
@@ -143,6 +187,22 @@ class AuthController extends Controller
     /**
      * Impersonate a user (Admin only).
      */
+    #[OA\Post(
+        path: '/admin/impersonate/{id}',
+        summary: 'Impersonasi Akun Anggota Senat (Khusus Admin)',
+        description: 'Memungkinkan administrator untuk berganti peran dan mengakses sistem atas nama anggota senat tertentu.',
+        tags: ['Autentikasi & Akun'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID Pengguna target yang akan diimpersonasi', schema: new OA\Schema(type: 'integer', example: 6))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Impersonasi berhasil dimulai, token akses target diterbitkan'),
+            new OA\Response(response: 403, description: 'Akses ditolak, hanya administrator yang dapat melakukan impersonasi'),
+            new OA\Response(response: 404, description: 'Pengguna target tidak ditemukan'),
+            new OA\Response(response: 422, description: 'Tidak dapat melakukan impersonasi ke akun sendiri')
+        ]
+    )]
     public function impersonate(Request $request, $id)
     {
         $admin = $request->user();
