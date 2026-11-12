@@ -66,6 +66,7 @@ Route::post('chatbot/chat', [ChatbotController::class, 'chat'])->middleware('thr
 
 // Public meeting & notulensi read (for transparent senat governance)
 Route::get('rapat', [RapatController::class, 'index']);
+Route::get('rapat/active', [PresensiRapatController::class, 'getActive']);
 Route::get('rapat/{rapat}', [RapatController::class, 'show']);
 Route::get('notulensi', [NotulensiController::class, 'index']);
 Route::get('notulensi/{notulensi}', [NotulensiController::class, 'show']);
@@ -93,7 +94,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
 
     // Presensi kehadiran rapat
-    Route::get('rapat/active', [PresensiRapatController::class, 'getActive']);
     Route::post('rapat/presensi', [PresensiRapatController::class, 'submitPresensi']);
     Route::post('rapat/{id}/generate-qr', [PresensiRapatController::class, 'generateQr']);
     Route::post('rapat/{id}/freeze-presensi', [PresensiRapatController::class, 'freezePresensi']);
