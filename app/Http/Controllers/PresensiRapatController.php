@@ -330,7 +330,6 @@ class PresensiRapatController extends Controller
         summary: 'Monitor Kehadiran Sidang dan Kuorum Real-time',
         description: 'Mengambil daftar anggota rapat beserta status kehadiran (hadir/izin/menunggu), waktu scan, dan persentase kuorum.',
         tags: ['Presensi Rapat'],
-        security: [['bearerAuth' => []]],
         parameters: [
             new OA\Parameter(
                 name: 'id',

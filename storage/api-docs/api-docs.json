@@ -2255,12 +2255,7 @@
                     "404": {
                         "description": "Data rapat tidak ditemukan"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/rapat/{id}/anggota/{id_user}/validasi": {

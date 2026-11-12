@@ -84,6 +84,17 @@ Route::get('anggota-rapat', [AnggotaRapatController::class, 'index']);
 Route::get('anggota-kegiatan', [AnggotaKegiatanController::class, 'index']);
 Route::get('materi-rapat', [MateriRapatController::class, 'index']);
 
+// Public User Directory (Anggota Senat, Dosen, Sivitas Akademika)
+Route::get('user', [UserController::class, 'index']);
+Route::get('user/{user}', [UserController::class, 'show']);
+
+// Public Live Attendance & Kuorum Monitor Sidang
+Route::get('rapat/{id}/live-attendance', [PresensiRapatController::class, 'getLiveAttendance']);
+
+// Public Tanggapan Aspirasi (Transparansi respon senat)
+Route::get('tanggapan-aspirasi', [TanggapanAspirasiController::class, 'index']);
+Route::get('tanggapan-aspirasi/{tanggapan_aspirasi}', [TanggapanAspirasiController::class, 'show']);
+
 /*
 |--------------------------------------------------------------------------
 | Authenticated Routes (Any valid user via Laravel Sanctum or ApiToken)
@@ -97,12 +108,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('rapat/presensi', [PresensiRapatController::class, 'submitPresensi']);
     Route::post('rapat/{id}/generate-qr', [PresensiRapatController::class, 'generateQr']);
     Route::post('rapat/{id}/freeze-presensi', [PresensiRapatController::class, 'freezePresensi']);
-    Route::get('rapat/{id}/live-attendance', [PresensiRapatController::class, 'getLiveAttendance']);
     Route::put('rapat/{id}/anggota/{id_user}/validasi', [PresensiRapatController::class, 'validasiManual']);
 
     // Workspace rapat (catatan pribadi, lampiran, berbagi materi)
     Route::get('rapat/{id_rapat}/catatan', [RapatCatatanController::class, 'index']);
-    Route::put('rapat/{id_rapat}/catatan', [RapatCatatanController::class, 'upsert']);
+    Route::match(['post', 'put'], 'rapat/{id_rapat}/catatan', [RapatCatatanController::class, 'upsert']);
     Route::get('rapat/{id_rapat}/lampiran', [RapatLampiranController::class, 'index']);
     Route::post('rapat/{id_rapat}/lampiran', [RapatLampiranController::class, 'store']);
     Route::delete('rapat/{id_rapat}/lampiran/{id_lampiran}', [RapatLampiranController::class, 'destroy']);
@@ -196,7 +206,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Tanggapan Aspirasi & Update Aspirasi
         Route::put('aspirasi/{aspirasi}', [AspirasiController::class, 'update']);
         Route::delete('aspirasi/{aspirasi}', [AspirasiController::class, 'destroy']);
-        Route::apiResource('tanggapan-aspirasi', TanggapanAspirasiController::class);
+        Route::post('tanggapan-aspirasi', [TanggapanAspirasiController::class, 'store']);
+        Route::put('tanggapan-aspirasi/{tanggapan_aspirasi}', [TanggapanAspirasiController::class, 'update']);
+        Route::delete('tanggapan-aspirasi/{tanggapan_aspirasi}', [TanggapanAspirasiController::class, 'destroy']);
 
         // Publikasi (Berita & Peraturan CRUD)
         Route::post('berita', [BeritaController::class, 'store']);
@@ -209,6 +221,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // User Management & Impersonation
         Route::post('admin/impersonate/{id}', [AuthController::class, 'impersonate']);
-        Route::apiResource('user', UserController::class);
+        Route::post('user', [UserController::class, 'store']);
+        Route::put('user/{user}', [UserController::class, 'update']);
+        Route::delete('user/{user}', [UserController::class, 'destroy']);
     });
 });
