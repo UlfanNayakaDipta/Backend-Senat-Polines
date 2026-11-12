@@ -95,7 +95,7 @@ class OrganisasiSenatSeeder extends Seeder
             // Komisi I — Pendidikan dan Pengajaran
             [
                 'nama' => 'Tri Yudantoro, S.Kom., M.Kom.',
-                'nim_nip' => '197205141999031002',
+                'nim_nip' => '196810252000121001',
                 'email' => 'tri.yudantoro@senat.test',
                 'komisi_id' => 1,
                 'jabatan_komisi' => 'Ketua',
@@ -104,7 +104,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Anis Roihatin, S.T., M.T.',
-                'nim_nip' => '197508212002122001',
+                'nim_nip' => '198701252014042001',
                 'email' => 'anggota1@senat.test', // Mempertahankan akun awal
                 'komisi_id' => 1,
                 'jabatan_komisi' => 'Sekretaris',
@@ -113,7 +113,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Prof. Dr. Ir. Dwiana Hendrawati, S.T., M.T.',
-                'nim_nip' => '196702111992032001',
+                'nim_nip' => '196908141998022001',
                 'email' => 'dwiana.hendrawati@senat.test',
                 'komisi_id' => 1,
                 'jabatan_komisi' => 'Anggota',
@@ -122,7 +122,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Yusmar Ardhi Hidayat, S.E., M.Si., Ph.D.',
-                'nim_nip' => '197410082001121001',
+                'nim_nip' => '198101312006041003',
                 'email' => 'yusmar.ardhi@senat.test',
                 'komisi_id' => 1,
                 'jabatan_komisi' => 'Anggota',
@@ -131,7 +131,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Resi Yudaningsih, S.E., M.Si., Akt.',
-                'nim_nip' => '197306152000032001',
+                'nim_nip' => '197211021998022001',
                 'email' => 'resi.yudaningsih@senat.test',
                 'komisi_id' => 1,
                 'jabatan_komisi' => 'Anggota',
@@ -140,7 +140,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Dr. Bagus Yunianto W., S.E., S.Kom., M.M.',
-                'nim_nip' => '197506222003121002',
+                'nim_nip' => '199106262019031017',
                 'email' => 'bagus.yunianto@senat.test',
                 'komisi_id' => 1,
                 'jabatan_komisi' => 'Anggota',
@@ -149,7 +149,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Nanang Adie Setyawan, S.E., M.M.',
-                'nim_nip' => '197904122005011002',
+                'nim_nip' => '199107102019031017',
                 'email' => 'nanang.adie@senat.test',
                 'komisi_id' => 1,
                 'jabatan_komisi' => 'Anggota',
@@ -160,7 +160,7 @@ class OrganisasiSenatSeeder extends Seeder
             // Komisi II — Penelitian dan Pengabdian kepada Masyarakat
             [
                 'nama' => 'Dr. Jumi, S.Kom., M.Kom.',
-                'nim_nip' => '197403162001122001',
+                'nim_nip' => '197006142005012001',
                 'email' => 'jumi@senat.test',
                 'komisi_id' => 2,
                 'jabatan_komisi' => 'Ketua',
@@ -169,7 +169,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Fajar Surya Herlambang, S.T., M.T.',
-                'nim_nip' => '197808142003121001',
+                'nim_nip' => '197206291999031001',
                 'email' => 'anggota2@senat.test', // Mempertahankan akun awal
                 'komisi_id' => 2,
                 'jabatan_komisi' => 'Sekretaris',
@@ -178,7 +178,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Yusnan Badruzzaman, S.T., M.Eng.',
-                'nim_nip' => '197511192002121001',
+                'nim_nip' => '197503132006041001',
                 'email' => 'yusnan.badruzzaman@senat.test',
                 'komisi_id' => 2,
                 'jabatan_komisi' => 'Anggota',
@@ -187,7 +187,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Mohammad Hasanudin, S.E., M.Si.',
-                'nim_nip' => '197204202001121002',
+                'nim_nip' => '197608012000121001',
                 'email' => 'mohammad.hasanudin@senat.test',
                 'komisi_id' => 2,
                 'jabatan_komisi' => 'Anggota',
@@ -196,7 +196,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Vinda Setya Kartika, S.T., M.T.',
-                'nim_nip' => '198207182008122002',
+                'nim_nip' => '199108112019032024',
                 'email' => 'vinda.setya@senat.test',
                 'komisi_id' => 2,
                 'jabatan_komisi' => 'Sekretaris BPH / Anggota',
@@ -205,7 +205,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Ir. Teguh Mulyo Wicaksono, S.Pd., M.Eng.',
-                'nim_nip' => '196909241995121001',
+                'nim_nip' => '199012022019031014',
                 'email' => 'teguh.mulyo@senat.test',
                 'komisi_id' => 2,
                 'jabatan_komisi' => 'Anggota',
@@ -216,7 +216,7 @@ class OrganisasiSenatSeeder extends Seeder
             // Komisi III — Kelembagaan dan Sumber Daya Manusia (Pengembangan SDM)
             [
                 'nama' => 'Ir. Riles Melvy Wattimena, M.T., IPP.',
-                'nim_nip' => '196504281992031002',
+                'nim_nip' => '196709031994031001',
                 'email' => 'riles.wattimena@senat.test',
                 'komisi_id' => 3,
                 'jabatan_komisi' => 'Ketua',
@@ -225,7 +225,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Iwan Budiyono, S.E., M.Si.Ak',
-                'nim_nip' => '197302192000031001',
+                'nim_nip' => '198410192010121003',
                 'email' => 'iwan.budiyono@senat.test',
                 'komisi_id' => 3,
                 'jabatan_komisi' => 'Sekretaris',
@@ -234,7 +234,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Sahid, S.T., M.T.',
-                'nim_nip' => '197103251998021001',
+                'nim_nip' => '197005121996011001',
                 'email' => 'sahid@senat.test',
                 'komisi_id' => 3,
                 'jabatan_komisi' => 'Anggota',
@@ -243,7 +243,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Dedi Budi Setyawan, S.T., M.T.',
-                'nim_nip' => '197609122002121001',
+                'nim_nip' => '197712062001121001',
                 'email' => 'dedi.budi@senat.test',
                 'komisi_id' => 3,
                 'jabatan_komisi' => 'Anggota',
@@ -252,7 +252,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Dr. Muhammad Anif, S.T., M.Eng.',
-                'nim_nip' => '197008121997021001',
+                'nim_nip' => '197710092005011001',
                 'email' => 'muhammad.anif@senat.test',
                 'komisi_id' => 3,
                 'jabatan_komisi' => 'Anggota',
@@ -261,7 +261,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Septian Yudha Kusuma, S.E., M.Si.Ak',
-                'nim_nip' => '198509172010121003',
+                'nim_nip' => '199009032019031016',
                 'email' => 'septian.yudha@senat.test',
                 'komisi_id' => 3,
                 'jabatan_komisi' => 'Anggota',
@@ -272,7 +272,7 @@ class OrganisasiSenatSeeder extends Seeder
             // Komisi IV — Pengembangan dan Kerja Sama
             [
                 'nama' => 'Dr. Ir. FX Arif Wahyudianto, S.T., M.T., IPM.',
-                'nim_nip' => '196605151992031002',
+                'nim_nip' => '197412111994031001',
                 'email' => 'arif.wahyudianto@senat.test',
                 'komisi_id' => 4,
                 'jabatan_komisi' => 'Ketua',
@@ -281,7 +281,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Alvianita Gunawan Putri, S.E., M.Acc., Ak., CA., CPA., ASEAN CPA.',
-                'nim_nip' => '198701142014042001',
+                'nim_nip' => '199201072019032024',
                 'email' => 'alvianita.putri@senat.test',
                 'komisi_id' => 4,
                 'jabatan_komisi' => 'Sekretaris',
@@ -290,7 +290,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Prof. Dr. Ir. Kurnianingsih, S.T., M.T.',
-                'nim_nip' => '197708022002122001',
+                'nim_nip' => '197904262003122002',
                 'email' => 'kurnianingsih@senat.test',
                 'komisi_id' => 4,
                 'jabatan_komisi' => 'Anggota',
@@ -299,7 +299,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Ir. Abdul Syukur Fauzi, S.T., M.T.',
-                'nim_nip' => '196803201994031001',
+                'nim_nip' => '197005051999031002',
                 'email' => 'abdul.syukur@senat.test',
                 'komisi_id' => 4,
                 'jabatan_komisi' => 'Anggota',
@@ -308,7 +308,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Leily Fatmawati, S.T., M.T.',
-                'nim_nip' => '197805122005012002',
+                'nim_nip' => '197406122005012001',
                 'email' => 'leily.fatmawati@senat.test',
                 'komisi_id' => 4,
                 'jabatan_komisi' => 'Anggota',
@@ -317,7 +317,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Iman Mujiarto, S.T., M.T.',
-                'nim_nip' => '197003181997021002',
+                'nim_nip' => '197009172005011003',
                 'email' => 'iman.mujiarto@senat.test',
                 'komisi_id' => 4,
                 'jabatan_komisi' => 'Anggota',
@@ -328,7 +328,7 @@ class OrganisasiSenatSeeder extends Seeder
             // Komisi V — Komisi Etik (Etika)
             [
                 'nama' => 'Drs. Suroso, M.Sc.',
-                'nim_nip' => '196308121990031001',
+                'nim_nip' => '196511051994031002',
                 'email' => 'suroso@senat.test',
                 'komisi_id' => 5,
                 'jabatan_komisi' => 'Ketua',
@@ -337,7 +337,7 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Achmad Zaenuddin, S.E., M.Si.',
-                'nim_nip' => '197109251999031001',
+                'nim_nip' => '197305271999031002',
                 'email' => 'achmad.zaenuddin@senat.test',
                 'komisi_id' => 5,
                 'jabatan_komisi' => 'Sekretaris',
@@ -346,11 +346,11 @@ class OrganisasiSenatSeeder extends Seeder
             ],
             [
                 'nama' => 'Dr. Garup Lambang Goro, S.T., M.T.',
-                'nim_nip' => '197604152002121002',
+                'nim_nip' => '196708121990031003',
                 'email' => 'garup.lambang@senat.test',
                 'komisi_id' => 5,
-                'jabatan_komisi' => 'Anggota',
-                'jabatan_struktur' => 'Anggota Komisi V',
+                'jabatan_komisi' => 'Anggota (Direktur Polines)',
+                'jabatan_struktur' => 'Anggota Komisi V (Direktur Polines)',
                 'urutan' => 30,
             ],
         ];

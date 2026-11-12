@@ -34,7 +34,16 @@ class MasterSeeder extends Seeder
             JenisRapat::firstOrCreate(['nama_jenis' => $j]);
         }
 
-        $jabatan = ['2021001' => 'Ketua', '2021002' => 'Sekretaris', '2021003' => 'Anggota', '2021004' => 'Anggota'];
+        $jabatan = [
+            '197101172003121001' => 'Ketua',
+            '197607202008011011' => 'Sekretaris',
+            '198701252014042001' => 'Anggota',
+            '197206291999031001' => 'Anggota',
+            '2021001' => 'Ketua',
+            '2021002' => 'Sekretaris',
+            '2021003' => 'Anggota',
+            '2021004' => 'Anggota',
+        ];
 
         foreach (array_keys($jabatan) as $i => $nim) {
             $user = User::where('nim_nip', $nim)->first();
