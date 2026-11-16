@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Jobs\ProsesRekamanJob;
 use App\Models\RapatRekaman;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use OpenApi\Attributes as OA;
+use Throwable;
 
 /**
  * Rekaman rapat → notulensi otomatis.
@@ -110,7 +112,16 @@ class RapatRekamanController extends Controller
             'progres' => 2,
         ]);
 
-        ProsesRekamanJob::dispatch($rekaman->id_rekaman);
+        try {
+            ProsesRekamanJob::dispatch($rekaman->id_rekaman);
+        } catch (Throwable $e) {
+            // Queue sinkron menjalankan job di dalam request. Berkas sudah
+            // tersimpan, jadi kegagalan transkripsi/AI dibalas 202 dengan
+            // status "gagal" supaya UI menampilkan pesan yang jelas.
+            Log::warning('Proses rekaman gagal saat unggah: ' . $e->getMessage(), [
+                'id_rekaman' => $rekaman->id_rekaman,
+            ]);
+        }
 
         return response()->json($this->ringkas($rekaman->fresh()), 202);
     }
