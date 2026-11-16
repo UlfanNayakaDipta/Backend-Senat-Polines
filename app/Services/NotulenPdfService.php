@@ -13,11 +13,12 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 /**
- * isi_notulensi (markdown) → PDF notulen resmi format FPM 5.5.01/L2.
+ * isi_notulensi (markdown) -> PDF notulen resmi format FPM 5.5.01/L2.
  *
- * Fokus pada HASIL rapat (informasi, agenda, pembahasan + kesepakatan,
- * kesimpulan, penutup). Lampiran dan daftar hadir sengaja tidak dirender:
- * keduanya dokumen terpisah yang diurus sekretariat.
+ * Tata letak mengikuti contoh dokumen sekretariat: halaman 612x1008 pt,
+ * kop dengan logo + nomor formulir, tabel NOMOR/AGENDA RAPAT/HASIL RAPAT
+ * yang rangkanya dicetak di setiap halaman, dan blok tanda tangan di akhir.
+ * Lampiran & daftar hadir sengaja tidak dirender.
  */
 class NotulenPdfService
 {
@@ -35,6 +36,8 @@ class NotulenPdfService
         'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu',
     ];
 
+    private const FONT_DIR = 'resources/fonts/';
+
     /**
      * Render notulen menjadi PDF dan simpan ke public/uploads/notulen/{id_rapat}/.
      *
@@ -44,23 +47,24 @@ class NotulenPdfService
     {
         $rapat = $notulensi->rapat()->with('jenisRapat')->firstOrFail();
 
-        $meta = $this->meta($rapat);
-        $isi = $this->urai((string) $notulensi->isi_notulensi);
-
         $data = [
-            'meta' => $meta,
-            'isi' => $isi,
+            'meta' => $this->meta($rapat),
+            'isi' => $this->urai((string) $notulensi->isi_notulensi),
         ];
 
         $pdf = Pdf::loadView('notulen.pdf', $data)
-            ->setPaper('a4', 'portrait')
+            ->setPaper([0, 0, 612, 1008], 'portrait')
             ->setOption('isRemoteEnabled', false)
-            ->setOption('defaultFont', 'Helvetica')
+            ->setOption('defaultFont', 'RapatBody')
+            ->setOption('isFontSubsettingEnabled', true)
             ->setOption('dpi', 96);
+
+        $this->daftarkanFont($pdf->getDomPDF()->getFontMetrics());
 
         $pdf->render();
 
-        // Kop digambar setelah render: page_script baru tahu nomor & total halaman final.
+        // Rangka tabel + kop digambar setelah render: page_script baru tahu
+        // nomor dan total halaman final.
         $pdf->getDomPDF()->getCanvas()->page_script(
             function (int $nomor, int $total, $canvas, $fontMetrics): void {
                 NotulenKop::gambar($canvas, $fontMetrics, $nomor, $total);
@@ -95,11 +99,25 @@ class NotulenPdfService
         return is_file($absolut) ? $absolut : null;
     }
 
-    /**
-     * Metadata identitas rapat + penandatangan.
-     *
-     * @return array<string, mixed>
-     */
+    /** Daftarkan font lokal: Liberation Sans (metrik Arial) + DejaVu Sans untuk kop. */
+    private function daftarkanFont($fontMetrics): void
+    {
+        $dir = base_path(self::FONT_DIR);
+        foreach ([
+            ['RapatBody', 'normal', 'LiberationSans-Regular.ttf'],
+            ['RapatBody', 'bold', 'LiberationSans-Bold.ttf'],
+            ['RapatBody', 'italic', 'LiberationSans-Italic.ttf'],
+            ['RapatKop', 'normal', 'DejaVuSans.ttf'],
+            ['RapatKop', 'bold', 'DejaVuSans-Bold.ttf'],
+        ] as [$keluarga, $bobot, $berkas]) {
+            $fontMetrics->registerFont([
+                'family' => $keluarga,
+                'weight' => $bobot,
+                'style' => 'normal',
+            ], $dir . $berkas);
+        }
+    }
+
     public function meta(Rapat $rapat): array
     {
         $tanggal = $rapat->tanggal instanceof Carbon
@@ -134,9 +152,7 @@ class NotulenPdfService
         return $tanggal->format('d') . ' ' . self::BULAN[(int) $tanggal->format('n')] . ' ' . $tanggal->format('Y');
     }
 
-    /**
-     * @return array{nama:string,nip:string}
-     */
+    /** @return array{nama:string,nip:string} */
     private function penandatangan(string $jabatan): array
     {
         $row = StrukturOrganisasi::query()
@@ -152,199 +168,82 @@ class NotulenPdfService
     }
 
     /**
-     * Markdown bebas → struktur bagian notulen.
+     * Urai markdown notulen menjadi blok siap render.
      *
-     * @return array{
-     *     identitas: array<string,string>,
-     *     agenda: list<array{level:int,teks:string}>,
-     *     pembahasan: list<array{judul:string,poin:list<array{level:int,teks:string}>,kesepakatan:list<array{level:int,teks:string}>}>,
-     *     kesimpulan: list<array{level:int,teks:string}>,
-     *     penutup: list<array{level:int,teks:string}>
-     * }
+     * @return array{identitas:array,agenda:array,jalan:array,kesimpulan:array,penutup:array}
      */
-    public function urai(string $markdown): array
+    public function urai(string $teks): array
     {
         $hasil = [
             'identitas' => [],
             'agenda' => [],
-            'pembahasan' => [],
+            'jalan' => [],
             'kesimpulan' => [],
             'penutup' => [],
         ];
 
-        $bagian = 'pembahasan';
-        $indeksPembahasan = -1;
-        $keKesepakatan = false;
+        $bagian = 'jalan';
+        $kunciTerakhir = null;
 
-        foreach (preg_split('/\R/u', $markdown) ?: [] as $baris) {
-            $baris = rtrim($baris);
+        foreach (preg_split('/\R/', $teks) ?: [] as $baris) {
+            $rapat = trim($baris);
 
-            if (trim($baris) === '') {
+            if ($rapat === '') {
                 continue;
             }
 
-            // Heading "## ..." memindahkan bagian aktif.
-            if (preg_match('/^##\s+(.+)$/u', trim($baris), $m)) {
-                $judul = $this->bersihkan($m[1]);
-                $bagian = $this->tentukanBagian($judul);
-                $indeksPembahasan = -1;
-                $keKesepakatan = false;
-
-                // Heading "## Hasil Pembahasan" boleh langsung diikuti isi;
-                // heading lain yang tidak dikenali (format lama, mis. "## Keputusan")
-                // tidak dibuang: dijadikan bab pembahasan tersendiri.
-                if ($bagian === 'agenda' && ! $this->cocok($judul, ['agenda'])) {
-                    $bagian = 'pembahasan';
-                    $hasil['pembahasan'][] = ['judul' => $judul, 'poin' => [], 'kesepakatan' => []];
-                    $indeksPembahasan = count($hasil['pembahasan']) - 1;
-                }
-
+            if (str_starts_with($rapat, '#### ')) {
+                $hasil[$bagian][] = ['jenis' => 'subjudul', 'teks' => trim(substr($rapat, 5)), 'level' => 0];
                 continue;
             }
 
-            // Sub-heading "### A. ..." → bab pembahasan baru.
-            if (preg_match('/^###\s+(.+)$/u', trim($baris), $m)) {
-                $judul = $this->bersihkan($m[1]);
-
-                if ($bagian === 'pembahasan') {
-                    if ($this->cocok($judul, ['kesepakatan'])) {
-                        $keKesepakatan = true;
-
-                        continue;
-                    }
-
-                    $hasil['pembahasan'][] = ['judul' => $judul, 'poin' => [], 'kesepakatan' => []];
-                    $indeksPembahasan = count($hasil['pembahasan']) - 1;
-                    $keKesepakatan = false;
-
-                    continue;
-                }
-
-                if ($bagian === 'agenda') {
-                    $hasil['agenda'][] = ['level' => 0, 'teks' => $judul];
-
-                    continue;
-                }
-            }
-
-            // Sub-sub-heading "#### Kesepakatan" di dalam bab pembahasan.
-            if (preg_match('/^#{4,}\s+(.+)$/u', trim($baris), $m)) {
-                if ($bagian === 'pembahasan' && $this->cocok($this->bersihkan($m[1]), ['kesepakatan'])) {
-                    $keKesepakatan = true;
-                }
-
+            if (str_starts_with($rapat, '### ')) {
+                $hasil[$bagian][] = ['jenis' => 'judul', 'teks' => trim(substr($rapat, 4)), 'level' => 0];
                 continue;
             }
+
+            if (str_starts_with($rapat, '## ')) {
+                $bagian = $this->klasifikasi(trim(substr($rapat, 3)));
+                $kunciTerakhir = null;
+                continue;
+            }
+
+            $level = preg_match('/^(\s+)/', $baris, $m) === 1 && strlen($m[1]) >= 2 ? 1 : 0;
+            $teks = preg_replace('/^([-•*]|\d+[.)])\s+/u', '', $rapat) ?? $rapat;
 
             if ($bagian === 'identitas') {
-                if (preg_match('/^[-*•]?\s*\*{0,2}([^:]{2,60})\*{0,2}\s*:\s*(.+)$/u', trim($baris), $m)) {
-                    $hasil['identitas'][trim($this->bersihkan($m[1]))] = $this->bersihkan($m[2]);
-                } elseif ($hasil['identitas'] !== []) {
-                    // Baris lanjutan milik nilai terakhir.
-                    $kunci = array_key_last($hasil['identitas']);
-                    $hasil['identitas'][$kunci] = trim($hasil['identitas'][$kunci] . ' ' . $this->bersihkan($baris));
+                if (preg_match('/^([^:]{2,60}):\s*(.*)$/u', $teks, $cocok) === 1) {
+                    $kunciTerakhir = trim($cocok[1]);
+                    $hasil['identitas'][] = ['kunci' => $kunciTerakhir, 'nilai' => trim($cocok[2]), 'butir' => []];
+                } elseif ($kunciTerakhir !== null && $hasil['identitas'] !== []) {
+                    $akhir = count($hasil['identitas']) - 1;
+                    $hasil['identitas'][$akhir]['butir'][] = ['jenis' => 'butir', 'level' => $level, 'teks' => $teks];
                 }
-
                 continue;
             }
 
-            // "Kesepakatan" tanpa heading, berdiri sendiri.
-            if ($bagian === 'pembahasan' && $this->cocok($this->bersihkan(ltrim($baris, "-*•# \t")), ['kesepakatan'])) {
-                $keKesepakatan = true;
-
+            if (in_array($bagian, ['agenda', 'kesimpulan', 'penutup'], true)) {
+                $hasil[$bagian][] = ['jenis' => 'butir', 'level' => $level, 'teks' => $teks];
                 continue;
             }
 
-            $item = $this->itemDaftar($baris);
-
-            if ($bagian === 'agenda') {
-                $hasil['agenda'][] = $item;
-            } elseif ($bagian === 'kesimpulan') {
-                $hasil['kesimpulan'][] = $item;
-            } elseif ($bagian === 'penutup') {
-                $hasil['penutup'][] = $item;
-            } elseif ($bagian === 'pembahasan' || $indeksPembahasan >= 0) {
-                // Isi tanpa sub-heading tetap dicetak: buat bab "Hasil Rapat" implisit.
-                if ($indeksPembahasan < 0) {
-                    $hasil['pembahasan'][] = ['judul' => 'Hasil Rapat', 'poin' => [], 'kesepakatan' => []];
-                    $indeksPembahasan = count($hasil['pembahasan']) - 1;
-                }
-
-                $kunci = $keKesepakatan ? 'kesepakatan' : 'poin';
-                $hasil['pembahasan'][$indeksPembahasan][$kunci][] = $item;
-            }
+            $jenis = preg_match('/^kesepakatan\b/i', $teks) === 1 ? 'kesepakatan' : 'butir';
+            $hasil['jalan'][] = ['jenis' => $jenis, 'level' => $level, 'teks' => $teks];
         }
 
         return $hasil;
     }
 
-    /**
-     * @param  list<string>  $kataKunci
-     */
-    private function cocok(string $teks, array $kataKunci): bool
+    private function klasifikasi(string $judul): string
     {
-        foreach ($kataKunci as $kunci) {
-            if (Str::contains(Str::lower($teks), $kunci)) {
-                return true;
-            }
-        }
+        $j = Str::lower($judul);
 
-        return false;
-    }
-
-    private function tentukanBagian(string $judul): string
-    {
-        $judul = Str::lower($judul);
-
-        if (Str::contains($judul, ['identitas', 'informasi'])) {
-            return 'identitas';
-        }
-
-        if (Str::contains($judul, ['agenda'])) {
-            return 'agenda';
-        }
-
-        if (Str::contains($judul, ['pembahasan', 'jalannya', 'hasil'])) {
-            return 'pembahasan';
-        }
-
-        if (Str::contains($judul, ['kesimpulan'])) {
-            return 'kesimpulan';
-        }
-
-        if (Str::contains($judul, ['penutup'])) {
-            return 'penutup';
-        }
-
-        // Heading tak dikenal (mis. action item) tidak dibuang: masuk agenda.
-        return 'agenda';
-    }
-
-    /**
-     * @return array{level:int,teks:string}
-     */
-    private function itemDaftar(string $baris): array
-    {
-        $level = 0;
-        $teks = $baris;
-
-        if (preg_match('/^(\s*)[-*•]\s+(.+)$/u', $baris, $m)) {
-            $level = min(2, (int) floor(mb_strlen($m[1]) / 2));
-            $teks = $m[2];
-        } elseif (preg_match('/^(\s*)(\d+|[a-zA-Z])[.)]\s+(.+)$/u', $baris, $m)) {
-            $level = min(2, (int) floor(mb_strlen($m[1]) / 2));
-            $teks = $m[3];
-        }
-
-        return ['level' => $level, 'teks' => $this->bersihkan($teks)];
-    }
-
-    /** Buang penanda markdown sebaris yang tidak perlu di PDF. */
-    private function bersihkan(string $teks): string
-    {
-        $teks = str_replace(['**', '__', '`', '\\'], '', $teks);
-        $teks = preg_replace('/\*(\S[^*]*)\*/u', '$1', $teks) ?? $teks;
-
-        return trim($teks);
+        return match (true) {
+            str_contains($j, 'informasi'), str_contains($j, 'identitas') => 'identitas',
+            str_contains($j, 'agenda') => 'agenda',
+            str_contains($j, 'kesimpulan') => 'kesimpulan',
+            str_contains($j, 'penutup') => 'penutup',
+            default => 'jalan',
+        };
     }
 }

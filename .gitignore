@@ -8,6 +8,7 @@
 /storage/framework/testing/*
 /storage/framework/views/*
 /storage/logs/*
+/storage/fonts/*
 /vendor
 .env
 .env.backup
