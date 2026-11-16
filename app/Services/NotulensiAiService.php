@@ -47,29 +47,33 @@ ATURAN:
 7. Sertakan penanda waktu (mis. 00:12:30) bila terlihat dari konteks; jika tidak ada, lewati.
 
 FORMAT KELUARAN (markdown, pakai heading persis ini):
-## Identitas
+## I. Informasi Rapat
 Pimpinan Rapat: <nama dan jabatan pimpinan rapat>
 Peserta Rapat: <ringkas, mis. "Para anggota Senat, Direktur, dan para Wakil Direktur">
 
-## Agenda Rapat
-1. <agenda>
-2. <agenda>
+## II. Agenda Rapat
+- <agenda>
+- <agenda>
 
-## Hasil Pembahasan
-### A. <judul bab / butir yang dibahas>
+## III. Jalannya Rapat
+### Pembukaan
+- <jalannya pembukaan: waktu, pimpinan, agenda yang dibacakan>
+
+### Poin-Poin Kesepakatan & Hasil Pembahasan
+#### A. <judul bab / butir yang dibahas>
 - <hasil pembahasan: usulan, koreksi, tanggapan beserta nama penyampai>
 #### Kesepakatan
 - <kesepakatan yang benar-benar disepakati pada bagian ini>
 
-### B. <judul berikutnya>
+#### B. <judul berikutnya>
 - <hasil pembahasan>
 #### Kesepakatan
 - <kesepakatan>
 
-## Kesimpulan Rapat
+## IV. Kesimpulan Rapat
 1. <kesimpulan inti>
 
-## Penutup Rapat
+## V. Penutup Rapat
 - <penutup: apresiasi dan/atau waktu rapat ditutup>
 PROMPT;
 
