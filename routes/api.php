@@ -69,6 +69,7 @@ Route::get('rapat', [RapatController::class, 'index']);
 Route::get('rapat/active', [PresensiRapatController::class, 'getActive']);
 Route::get('rapat/{rapat}', [RapatController::class, 'show']);
 Route::get('notulensi', [NotulensiController::class, 'index']);
+Route::get('notulensi/{id}/pdf', [NotulensiController::class, 'pdf']);
 Route::get('notulensi/{notulensi}', [NotulensiController::class, 'show']);
 Route::get('kegiatan', [KegiatanController::class, 'index']);
 Route::get('kegiatan/{kegiatan}', [KegiatanController::class, 'show']);
@@ -148,6 +149,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('rapat/{rapat}', [RapatController::class, 'destroy']);
 
         Route::post('notulensi', [NotulensiController::class, 'store']);
+        Route::post('notulensi/{id}/pdf', [NotulensiController::class, 'cetak']);
         Route::put('notulensi/{notulensi}', [NotulensiController::class, 'update']);
         Route::delete('notulensi/{notulensi}', [NotulensiController::class, 'destroy']);
 

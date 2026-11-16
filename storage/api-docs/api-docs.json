@@ -1733,6 +1733,79 @@
                 ]
             }
         },
+        "/notulensi/{id}/pdf": {
+            "get": {
+                "tags": [
+                    "Notulensi & Risalah"
+                ],
+                "summary": "Unduh PDF Notulen Rapat",
+                "description": "Mengunduh notulen resmi berformat FPM 5.5.01/L2. Jika PDF belum ada, dokumen dicetak saat permintaan.",
+                "operationId": "bfe99ba8444f59e08926f5459030b60d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Berkas PDF notulen",
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Notulensi tidak ditemukan"
+                    },
+                    "500": {
+                        "description": "Gagal mencetak PDF"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Notulensi & Risalah"
+                ],
+                "summary": "Cetak Ulang PDF Notulen",
+                "description": "Mencetak ulang PDF dari isi_notulensi terbaru (dipakai setelah notulen diedit).",
+                "operationId": "92ff414363d687a6e605dc3ed396822c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "PDF berhasil dicetak ulang"
+                    },
+                    "404": {
+                        "description": "Notulensi tidak ditemukan"
+                    },
+                    "500": {
+                        "description": "Gagal mencetak PDF"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/peraturan": {
             "get": {
                 "tags": [
