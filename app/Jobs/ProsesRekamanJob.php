@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\AnggotaRapat;
 use App\Models\Notulensi;
 use App\Models\RapatRekaman;
+use App\Services\NotulenPdfService;
 use App\Services\NotulensiAiService;
 use App\Services\TranskripsiService;
 use Illuminate\Bus\Queueable;
@@ -27,7 +28,7 @@ class ProsesRekamanJob implements ShouldQueue
 
     public function __construct(public int $idRekaman) {}
 
-    public function handle(TranskripsiService $stt, NotulensiAiService $ai): void
+    public function handle(TranskripsiService $stt, NotulensiAiService $ai, NotulenPdfService $pdf): void
     {
         $rekaman = RapatRekaman::with('rapat.jenisRapat')->find($this->idRekaman);
 
@@ -89,6 +90,19 @@ class ProsesRekamanJob implements ShouldQueue
                 'isi_notulensi' => $notulen,
                 'status' => 'draf',
             ]);
+
+            // Notulen langsung dicetak ke PDF resmi (format FPM 5.5.01/L2).
+            // Kegagalan render tidak boleh membatalkan notulen yang teksnya sudah jadi.
+            $rekaman->update(['progres' => 95]);
+            $this->lapor();
+
+            try {
+                $pdf->buat($row);
+            } catch (Throwable $e) {
+                Log::warning('Gagal membuat PDF notulen: ' . $e->getMessage(), [
+                    'id_notulensi' => $row->id_notulensi,
+                ]);
+            }
 
             $rekaman->update([
                 'notulen' => $notulen,
