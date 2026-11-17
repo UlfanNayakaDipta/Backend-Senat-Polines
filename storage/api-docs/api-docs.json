@@ -245,6 +245,56 @@
                 }
             }
         },
+        "/login/google": {
+            "post": {
+                "tags": [
+                    "Autentikasi & Akun"
+                ],
+                "summary": "Autentikasi Login via Akun Google (@polines.ac.id)",
+                "description": "Memverifikasi identitas Google OAuth (bridge SSO terotentikasi atau token Google). Akun dengan domain polines.ac.id diizinkan masuk dan otomatis didaftarkan sebagai anggota jika belum terdapat di database.",
+                "operationId": "c8adb8095c79a6ca1d8a9d7a55120f52",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "dosen@polines.ac.id"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Dr. Dosen Polines"
+                                    },
+                                    "id_token": {
+                                        "description": "Google OAuth ID token",
+                                        "type": "string"
+                                    },
+                                    "access_token": {
+                                        "description": "Google OAuth access token",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Autentikasi Google berhasil, token diterbitkan"
+                    },
+                    "401": {
+                        "description": "Kredensial atau tanda tangan SSO Google tidak valid"
+                    },
+                    "403": {
+                        "description": "Email Google bukan domain resmi polines.ac.id"
+                    }
+                }
+            }
+        },
         "/me": {
             "get": {
                 "tags": [
