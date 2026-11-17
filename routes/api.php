@@ -38,7 +38,8 @@ use App\Http\Controllers\ChatbotController;
 Route::get('committees', [KomisiController::class, 'publicCommittees']);
 
 // Authentication
-Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:15,1');
+Route::post('login/google', [AuthController::class, 'loginWithGoogle'])->middleware('throttle:15,1');
 
 // Public directory & master data read-only
 Route::get('periode-senat', [PeriodeSenatController::class, 'index']);
