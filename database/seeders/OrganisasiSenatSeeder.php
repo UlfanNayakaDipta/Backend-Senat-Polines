@@ -6,6 +6,7 @@ use App\Models\Enrollment;
 use App\Models\Komisi;
 use App\Models\PeriodeSenat;
 use App\Models\StrukturOrganisasi;
+use App\Models\TugasKomisi;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -13,42 +14,104 @@ class OrganisasiSenatSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Periode Senat 2026-2029
-        $periode = PeriodeSenat::updateOrCreate(
-            ['nama_periode' => '2026–2029'],
-            ['tanggal_mulai' => '2026-09-01', 'tanggal_selesai' => '2029-08-31']
-        );
+        // 1. Periode Senat 2026–2030 (4 tahun sesuai Pasal 4 & Pasal 12 OTK Senat)
+        $periode = PeriodeSenat::where('nama_periode', '2026–2030')->first()
+            ?? PeriodeSenat::where('nama_periode', '2026–2029')->first();
 
-        // 2. 5 Komisi Tetap Resmi + 1 Badan Pekerja (BP)
+        if ($periode) {
+            $periode->update([
+                'nama_periode' => '2026–2030',
+                'tanggal_mulai' => '2026-09-01',
+                'tanggal_selesai' => '2030-08-31',
+            ]);
+        } else {
+            $periode = PeriodeSenat::create([
+                'nama_periode' => '2026–2030',
+                'tanggal_mulai' => '2026-09-01',
+                'tanggal_selesai' => '2030-08-31',
+            ]);
+        }
+
+        // 2. 5 Komisi Tetap Resmi + 1 Badan Pekerja (BP) beserta Tugas Pokok (Pasal 14 & 15 OTK Senat 2026)
         $komisiDefinitions = [
             1 => [
-                'nama_komisi' => 'Komisi I',
-                'deskripsi' => 'Komisi Pendidikan dan Pengajaran',
+                'kode' => 'KOM-I',
+                'nama_komisi' => 'Komisi Pendidikan dan Pengajaran',
+                'deskripsi' => 'Kebijakan & norma akademik, penjaminan mutu pembelajaran, kebebasan akademik, pembukaan/penutupan prodi, serta gelar & penghargaan akademik.',
+                'tugas' => [
+                    'Merumuskan dan memberi pertimbangan kebijakan serta norma akademik dalam penyelenggaraan pendidikan dan pembelajaran.',
+                    'Mengawasi penerapan kebijakan akademik dan pelaksanaan penjaminan mutu pendidikan.',
+                    'Memberi pertimbangan dan rekomendasi penyelenggaraan pembelajaran, kebebasan akademik, mimbar akademik, dan otonomi keilmuan.',
+                    'Memberi pertimbangan kepada Direktur terkait pembukaan/penutupan jurusan dan program studi serta pemberian/pencabutan gelar dan penghargaan akademik.',
+                ],
             ],
             2 => [
-                'nama_komisi' => 'Komisi II',
-                'deskripsi' => 'Komisi Penelitian dan Pengabdian kepada Masyarakat',
+                'kode' => 'KOM-II',
+                'nama_komisi' => 'Komisi Penelitian dan Pengabdian kepada Masyarakat',
+                'deskripsi' => 'Ketentuan tata cara penyelenggaraan penelitian, pelaksanaan pengabdian kepada masyarakat, dan pengawasannya.',
+                'tugas' => [
+                    'Memberi pertimbangan dalam penyusunan ketentuan tata cara penyelenggaraan penelitian.',
+                    'Memberi pertimbangan dalam penyusunan ketentuan tata cara pelaksanaan pengabdian kepada masyarakat.',
+                    'Melakukan pengawasan terhadap penyelenggaraan penelitian dan pengabdian kepada masyarakat.',
+                ],
             ],
             3 => [
-                'nama_komisi' => 'Komisi III',
-                'deskripsi' => 'Komisi Kelembagaan dan Sumber Daya Manusia (Pengembangan SDM)',
+                'kode' => 'KOM-III',
+                'nama_komisi' => 'Komisi Kelembagaan dan Sumber Daya Manusia',
+                'deskripsi' => 'Pengembangan organisasi jurusan/prodi, karier & mutu dosen/tendik, pedoman kenaikan jabatan akademik, kode etik, dan rancangan OTK Senat.',
+                'tugas' => [
+                    'Memberi pertimbangan pengembangan organisasi jurusan/prodi serta pengembangan karier, penilaian prestasi, dan mutu dosen maupun tenaga kependidikan.',
+                    'Menyusun rekomendasi kualifikasi jabatan tugas tambahan, alih tugas tendik ke dosen, serta persyaratan dosen tidak tetap dan dosen praktisi/industri.',
+                    'Menyusun pedoman pertimbangan kenaikan jabatan akademik (Asisten Ahli hingga Profesor) dan penilaian dosen berprestasi.',
+                    'Menyusun norma/kode etik sivitas akademika, pedoman benturan kepentingan anggota Senat, serta mengoordinasikan rancangan perubahan OTK Senat.',
+                ],
             ],
             4 => [
-                'nama_komisi' => 'Komisi IV',
-                'deskripsi' => 'Komisi Pengembangan dan Kerja Sama',
+                'kode' => 'KOM-IV',
+                'nama_komisi' => 'Komisi Pengembangan dan Kerja Sama',
+                'deskripsi' => 'Kerja sama akademik & nonakademik dalam/luar negeri (DUDI, PT lain, lembaga sertifikasi), evaluasi hasil, serta kepatuhan MoU/PKS.',
+                'tugas' => [
+                    'Memberi pertimbangan perencanaan, pengembangan, dan pelaksanaan kerja sama akademik maupun nonakademik dengan mitra dalam dan luar negeri (DUDI, perguruan tinggi lain, lembaga pelatihan/sertifikasi).',
+                    'Memberi rekomendasi penataan, pemantauan, dan penilaian hasil kerja sama sesuai prinsip Statuta.',
+                    'Memastikan setiap kerja sama dituangkan dalam nota kesepahaman (MoU) dan/atau perjanjian kerja sama (PKS) sesuai ketentuan.',
+                ],
             ],
             5 => [
-                'nama_komisi' => 'Komisi V',
-                'deskripsi' => 'Komisi Etik',
+                'kode' => 'KOM-V',
+                'nama_komisi' => 'Komisi Etik',
+                'deskripsi' => 'Ketentuan kode etik dosen/mahasiswa/akademik, pengawasan norma akademik, dan rekomendasi sanksi kepada Direktur.',
+                'tugas' => [
+                    'Memberi pertimbangan penyusunan ketentuan kode etik dosen, kode etik mahasiswa, etika akademik, beserta sanksinya.',
+                    'Memberi pertimbangan dan rekomendasi dalam pengawasan penerapan norma akademik dan kode etik sivitas akademika.',
+                    'Memberi pertimbangan dan rekomendasi penjatuhan sanksi atas pelanggaran norma, etika, dan peraturan akademik kepada Direktur.',
+                ],
             ],
             6 => [
+                'kode' => 'BP',
                 'nama_komisi' => 'BP (Badan Pekerja)',
-                'deskripsi' => 'Koordinasi kerja antar-komisi, penyusunan rancangan agenda persidangan berkala, dan penyiapan berkas sidang.',
+                'deskripsi' => 'Penetapan agenda & materi rapat pleno, pembahasan hasil rapat komisi/panja, serta penampungan aspirasi.',
+                'tugas' => [
+                    'Menetapkan agenda rapat pleno dan menyiapkan materi pembahasan rapat pleno.',
+                    'Menerima dan membahas hasil kerja rapat komisi, rapat khusus, dan rapat panitia kerja.',
+                    'Menerima dan membahas aspirasi yang berkembang.',
+                ],
             ],
         ];
 
         foreach ($komisiDefinitions as $id => $def) {
-            Komisi::updateOrCreate(['id_komisi' => $id], $def);
+            $tugasList = $def['tugas'];
+            unset($def['tugas']);
+
+            $komisi = Komisi::updateOrCreate(['id_komisi' => $id], $def);
+
+            TugasKomisi::where('id_komisi', $komisi->id_komisi)->delete();
+            foreach ($tugasList as $urutan => $uraian) {
+                TugasKomisi::create([
+                    'id_komisi' => $komisi->id_komisi,
+                    'uraian_tugas' => $uraian,
+                    'urutan' => $urutan + 1,
+                ]);
+            }
         }
 
         // 3. Akun Administrator & Sekretariat
@@ -121,12 +184,17 @@ class OrganisasiSenatSeeder extends Seeder
             $user = User::where('nim_nip', $nip)->first()
                 ?? User::where('email', $profile['email'])->first();
 
+            $fotoProfil = 'images/members/' . $nip . '.jpg';
+
             if ($user) {
                 $nimTakenByOther = User::where('nim_nip', $nip)
                     ->where('id_user', '!=', $user->id_user)
                     ->exists();
 
-                $updates = ['nama' => $profile['nama']];
+                $updates = [
+                    'nama' => $profile['nama'],
+                    'foto_profil' => $fotoProfil,
+                ];
                 if (! $nimTakenByOther) {
                     $updates['nim_nip'] = $nip;
                 }
@@ -138,6 +206,7 @@ class OrganisasiSenatSeeder extends Seeder
                     'email' => $profile['email'],
                     'role' => 'anggota',
                     'password' => 'password',
+                    'foto_profil' => $fotoProfil,
                 ]);
             }
 

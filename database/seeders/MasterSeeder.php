@@ -17,22 +17,45 @@ class MasterSeeder extends Seeder
 {
     public function run(): void
     {
-        $periode = PeriodeSenat::firstOrCreate(
-            ['nama_periode' => '2026–2029'],
-            ['tanggal_mulai' => '2026-09-01', 'tanggal_selesai' => '2029-08-31']
+        $periode = PeriodeSenat::updateOrCreate(
+            ['nama_periode' => '2026–2030'],
+            ['tanggal_mulai' => '2026-09-01', 'tanggal_selesai' => '2030-08-31']
         );
 
         $komisiDefs = [
-            1 => ['nama_komisi' => 'Komisi I', 'deskripsi' => 'Komisi Pendidikan dan Pengajaran'],
-            2 => ['nama_komisi' => 'Komisi II', 'deskripsi' => 'Komisi Penelitian dan Pengabdian kepada Masyarakat'],
-            3 => ['nama_komisi' => 'Komisi III', 'deskripsi' => 'Komisi Kelembagaan dan Sumber Daya Manusia (Pengembangan SDM)'],
-            4 => ['nama_komisi' => 'Komisi IV', 'deskripsi' => 'Komisi Pengembangan dan Kerja Sama'],
-            5 => ['nama_komisi' => 'Komisi V', 'deskripsi' => 'Komisi Etik'],
-            6 => ['nama_komisi' => 'BP (Badan Pekerja)', 'deskripsi' => 'Koordinasi kerja antar-komisi, penyusunan rancangan agenda sidang, dan penyiapan berkas persidangan.'],
+            1 => [
+                'kode' => 'KOM-I',
+                'nama_komisi' => 'Komisi Pendidikan dan Pengajaran',
+                'deskripsi' => 'Kebijakan & norma akademik, penjaminan mutu pembelajaran, kebebasan akademik, pembukaan/penutupan prodi, serta gelar & penghargaan akademik.',
+            ],
+            2 => [
+                'kode' => 'KOM-II',
+                'nama_komisi' => 'Komisi Penelitian dan Pengabdian kepada Masyarakat',
+                'deskripsi' => 'Ketentuan tata cara penyelenggaraan penelitian, pelaksanaan pengabdian kepada masyarakat, dan pengawasannya.',
+            ],
+            3 => [
+                'kode' => 'KOM-III',
+                'nama_komisi' => 'Komisi Kelembagaan dan Sumber Daya Manusia',
+                'deskripsi' => 'Pengembangan organisasi jurusan/prodi, karier & mutu dosen/tendik, pedoman kenaikan jabatan akademik, kode etik, dan rancangan OTK Senat.',
+            ],
+            4 => [
+                'kode' => 'KOM-IV',
+                'nama_komisi' => 'Komisi Pengembangan dan Kerja Sama',
+                'deskripsi' => 'Kerja sama akademik & nonakademik dalam/luar negeri (DUDI, PT lain, lembaga sertifikasi), evaluasi hasil, serta kepatuhan MoU/PKS.',
+            ],
+            5 => [
+                'kode' => 'KOM-V',
+                'nama_komisi' => 'Komisi Etik',
+                'deskripsi' => 'Ketentuan kode etik dosen/mahasiswa/akademik, pengawasan norma akademik, dan rekomendasi sanksi kepada Direktur.',
+            ],
+            6 => [
+                'kode' => 'BP',
+                'nama_komisi' => 'BP (Badan Pekerja)',
+                'deskripsi' => 'Penetapan agenda & materi rapat pleno, pembahasan hasil rapat komisi/panja, serta penampungan aspirasi.',
+            ],
         ];
-        $komisis = collect($komisiDefs)
-            ->map(fn ($desk, $id) => Komisi::updateOrCreate(['id_komisi' => $id], $desk))
-            ->values();
+        collect($komisiDefs)
+            ->each(fn ($def, $id) => Komisi::updateOrCreate(['id_komisi' => $id], $def));
 
         foreach (['Akademik', 'Fasilitas', 'Kemahasiswaan', 'Lainnya', 'Etik', 'Badan Pekerja (BP)'] as $k) {
             KategoriAspirasi::firstOrCreate(['nama_kategori' => $k]);

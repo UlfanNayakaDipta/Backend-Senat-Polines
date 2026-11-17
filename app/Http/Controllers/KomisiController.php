@@ -13,13 +13,14 @@ use OpenApi\Attributes as OA;
 class KomisiController extends CrudController
 {
     protected string $model = Komisi::class;
-    protected array $with = [];
+    protected array $with = ['tugas'];
 
     protected function rules(?int $id = null): array
     {
         return [
-            'nama_komisi' => ['required','string','max:255'],
-            'deskripsi' => ['nullable','string'],
+            'kode' => ['nullable', 'string', 'max:20', 'unique:komisis,kode,' . ($id ?? 'NULL') . ',id_komisi'],
+            'nama_komisi' => ['required', 'string', 'max:255'],
+            'deskripsi' => ['nullable', 'string'],
         ];
     }
 
@@ -127,7 +128,7 @@ class KomisiController extends CrudController
     )]
     public function publicCommittees()
     {
-        $komisis = Komisi::with(['enrollments.user'])->orderBy('id_komisi')->get();
+        $komisis = Komisi::with(['enrollments.user', 'tugas'])->orderBy('id_komisi')->get();
 
         $data = $komisis->map(function ($komisi) {
             $ketua = $komisi->enrollments->first(function ($enrollment) {
@@ -144,12 +145,20 @@ class KomisiController extends CrudController
                     || str_starts_with($jab, 'sekretaris bp');
             });
 
-            $namaLower = strtolower(trim($komisi->nama_komisi));
-            if ($namaLower === 'bp' || str_contains($namaLower, 'badan pekerja')) {
-                $code = 'BP';
-            } else {
-                $code = strtoupper(str_replace('Komisi ', 'KOM-', $komisi->nama_komisi));
+            $code = $komisi->kode;
+            if (! $code) {
+                $namaLower = strtolower(trim($komisi->nama_komisi));
+                if ($namaLower === 'bp' || str_contains($namaLower, 'badan pekerja')) {
+                    $code = 'BP';
+                } else {
+                    $code = strtoupper(str_replace('Komisi ', 'KOM-', $komisi->nama_komisi));
+                }
             }
+
+            $tupoksiItems = $komisi->tugas->pluck('uraian_tugas')->values()->all();
+            $tupoksiText = ! empty($tupoksiItems)
+                ? implode('; ', $tupoksiItems)
+                : ($komisi->deskripsi ?? 'Belum ada deskripsi tugas pokok dan fungsi.');
 
             return [
                 'id' => $komisi->id_komisi,
@@ -158,7 +167,8 @@ class KomisiController extends CrudController
                 'lead' => $ketua?->user?->nama ?? 'Belum ditentukan',
                 'secretary' => $secretary?->user?->nama ?? 'Belum ditentukan',
                 'focus' => $komisi->deskripsi ?? 'Belum ada deskripsi komisi.',
-                'tupoksi' => $komisi->deskripsi ?? 'Belum ada deskripsi tugas pokok dan fungsi.',
+                'tupoksi' => $tupoksiText,
+                'tupoksi_items' => $tupoksiItems,
                 'members_count' => $komisi->enrollments->count(),
                 'members' => $komisi->enrollments->map(function ($enrollment) {
                     return [

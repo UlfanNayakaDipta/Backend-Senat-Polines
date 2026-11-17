@@ -15,4 +15,9 @@ class Komisi extends Model
     {
         return $this->hasMany(Enrollment::class, 'id_komisi', 'id_komisi');
     }
+
+    public function tugas(): HasMany
+    {
+        return $this->hasMany(TugasKomisi::class, 'id_komisi', 'id_komisi')->orderBy('urutan');
+    }
 }
