@@ -47,7 +47,7 @@ class RapatNotulensiSeeder extends Seeder
             ['id_rapat' => $rapat1->id_rapat],
             [
                 'id_user' => $admin->id_user,
-                'isi_notulensi' => "Jalannya Sidang Pleno Khusus Penetapan Draft OTK Senat 2026 dan Penyelenggaraan Pendidikan Polines 2026:\n1. Pembahasan Struktur Komisi Senat 2026-2029 (5 Komisi: Pendidikan & Pengajaran; Penelitian & Pengabdian; Kelembagaan & SDM; Pengembangan & Kerja Sama; Komisi Etik).\n2. Harmonisasi Peraturan Direktur Penyelenggaraan Pendidikan: Beban Magister Terapan 54-72 SKS, 1 SKS setara 45 jam/semester, penegasan blok vokasi Pasal 25 ayat (7).\n3. Standar operasional prosedur penguji Tugas Akhir melalui SK Direktur serta penetapan SOP pemanfaatan AI dan anti-plagiarisme.\nKeputusan: Naskah disahkan dengan kuorum 88% kehadiran anggota senat.",
+                'isi_notulensi' => "Jalannya Sidang Pleno Khusus Penetapan Draft OTK Senat 2026 dan Penyelenggaraan Pendidikan Polines 2026:\n1. Pembahasan Struktur Komisi & Badan Pekerja Senat 2026-2029 (5 Komisi: Pendidikan & Pengajaran; Penelitian & Pengabdian; Kelembagaan & SDM; Pengembangan & Kerja Sama; Komisi Etik; serta 1 Badan Pekerja / BP).\n2. Harmonisasi Peraturan Direktur Penyelenggaraan Pendidikan: Beban Magister Terapan 54-72 SKS, 1 SKS setara 45 jam/semester, penegasan blok vokasi Pasal 25 ayat (7).\n3. Standar operasional prosedur penguji Tugas Akhir melalui SK Direktur serta penetapan SOP pemanfaatan AI dan anti-plagiarisme.\nKeputusan: Naskah disahkan dengan kuorum 88% kehadiran anggota senat.",
                 'file_risalah' => 'risalah-pleno-otk-pendidikan-2026.pdf',
                 'tanggal_dibuat' => '2026-10-09 13:30:00',
             ]

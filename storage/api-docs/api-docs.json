@@ -1131,7 +1131,7 @@
                     "Komisi & Anggota Senat"
                 ],
                 "summary": "Tambah Master Data Komisi Baru",
-                "description": "Membuat komisi senat baru.",
+                "description": "Membuat komisi atau organ kerja senat baru.",
                 "operationId": "94f7a3a12b534edb2f7ae07858fa897b",
                 "requestBody": {
                     "required": true,
@@ -1144,11 +1144,11 @@
                                 "properties": {
                                     "nama_komisi": {
                                         "type": "string",
-                                        "example": "Komisi I (Bidang Akademik)"
+                                        "example": "Badan Pekerja (BP)"
                                     },
                                     "deskripsi": {
                                         "type": "string",
-                                        "example": "Bidang Pembelajaran, Kurikulum, dan Penjaminan Mutu"
+                                        "example": "Koordinasi kerja antar-komisi dan penyiapan berkas sidang"
                                     }
                                 },
                                 "type": "object"
@@ -1319,12 +1319,12 @@
                                         "example": "senat1@senat.polines.ac.id"
                                     },
                                     "id_komisi": {
-                                        "description": "ID numerik komisi atau kode komisi (KOM-1 s.d. KOM-5)",
+                                        "description": "ID numerik atau kode unit kerja (KOM-I s.d. KOM-V, atau BP)",
                                         "type": "string",
-                                        "example": "KOM-1"
+                                        "example": "KOM-I"
                                     },
                                     "jabatan_komisi": {
-                                        "description": "Jabatan dalam komisi (Ketua, Sekretaris, Anggota)",
+                                        "description": "Jabatan dalam komisi / BP (Ketua, Sekretaris, Anggota)",
                                         "type": "string",
                                         "example": "Ketua"
                                     },
@@ -1462,7 +1462,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "example": "KOM-1"
+                            "example": "KOM-I"
                         }
                     }
                 ],

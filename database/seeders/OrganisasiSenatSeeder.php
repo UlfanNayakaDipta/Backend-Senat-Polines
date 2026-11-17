@@ -20,7 +20,7 @@ class OrganisasiSenatSeeder extends Seeder
             ['tanggal_mulai' => '2026-09-01', 'tanggal_selesai' => '2029-08-31']
         );
 
-        // 2. 5 Komisi Tetap Resmi
+        // 2. 5 Komisi Tetap Resmi + 1 Badan Pekerja (BP)
         $komisiDefinitions = [
             1 => [
                 'nama_komisi' => 'Komisi I',
@@ -41,6 +41,10 @@ class OrganisasiSenatSeeder extends Seeder
             5 => [
                 'nama_komisi' => 'Komisi V',
                 'deskripsi' => 'Komisi Etik',
+            ],
+            6 => [
+                'nama_komisi' => 'BP (Badan Pekerja)',
+                'deskripsi' => 'Koordinasi kerja antar-komisi, penyusunan rancangan agenda persidangan berkala, dan penyiapan berkas sidang.',
             ],
         ];
 
@@ -86,10 +90,30 @@ class OrganisasiSenatSeeder extends Seeder
                 'nama' => 'Andi Setiawan, S.E., M.M.',
                 'nim_nip' => '197607202008011011',
                 'email' => 'sekretaris@senat.test',
-                'komisi_id' => 5, // Juga anggota Komisi V & Ketua BPH
+                'komisi_id' => 5, // Juga anggota Komisi V & Ketua BP
                 'jabatan_komisi' => 'Sekretaris Senat',
                 'jabatan_struktur' => 'Sekretaris Senat',
                 'urutan' => 2,
+            ],
+
+            // BP (Badan Pekerja)
+            [
+                'nama' => 'Andi Setiawan, S.E., M.M.',
+                'nim_nip' => '197607202008011011',
+                'email' => 'senat2@senat.polines.ac.id',
+                'komisi_id' => 6,
+                'jabatan_komisi' => 'Ketua',
+                'jabatan_struktur' => 'Ketua BP',
+                'urutan' => 31,
+            ],
+            [
+                'nama' => 'Vinda Setya Kartika, S.T., M.T.',
+                'nim_nip' => '199108112019032024',
+                'email' => 'senat14@senat.polines.ac.id',
+                'komisi_id' => 6,
+                'jabatan_komisi' => 'Sekretaris',
+                'jabatan_struktur' => 'Sekretaris BP',
+                'urutan' => 32,
             ],
 
             // Komisi I — Pendidikan dan Pengajaran
@@ -199,8 +223,8 @@ class OrganisasiSenatSeeder extends Seeder
                 'nim_nip' => '199108112019032024',
                 'email' => 'vinda.setya@senat.test',
                 'komisi_id' => 2,
-                'jabatan_komisi' => 'Sekretaris BPH / Anggota',
-                'jabatan_struktur' => 'Sekretaris BPH / Anggota Komisi II',
+                'jabatan_komisi' => 'Anggota',
+                'jabatan_struktur' => 'Sekretaris BP / Anggota Komisi II',
                 'urutan' => 14,
             ],
             [
@@ -355,17 +379,30 @@ class OrganisasiSenatSeeder extends Seeder
             ],
         ];
 
+        // Bersihkan enrollment contoh lama berbasis NIM placeholder 2021* agar tidak menumpuk di komisi resmi
+        $mockUserIds = User::where('nim_nip', 'like', '2021%')->pluck('id_user');
+        if ($mockUserIds->isNotEmpty()) {
+            $oldEnrollmentIds = Enrollment::whereIn('id_user', $mockUserIds)->pluck('id_enrollment');
+            if ($oldEnrollmentIds->isNotEmpty()) {
+                StrukturOrganisasi::whereIn('id_enrollment', $oldEnrollmentIds)->delete();
+                Enrollment::whereIn('id_enrollment', $oldEnrollmentIds)->delete();
+            }
+        }
+
         // 5. Eksekusi Simpan User, Enrollment & Struktur Organisasi
         foreach ($anggotaList as $data) {
-            $user = User::updateOrCreate(
-                ['email' => $data['email']],
-                [
+            $user = User::where('nim_nip', $data['nim_nip'])->first()
+                ?? User::where('email', $data['email'])->first();
+
+            if (! $user) {
+                $user = User::create([
                     'nim_nip' => $data['nim_nip'],
                     'nama' => $data['nama'],
+                    'email' => $data['email'],
                     'role' => 'anggota',
                     'password' => 'password',
-                ]
-            );
+                ]);
+            }
 
             // Buat / Update Enrollment
             $enrollment = Enrollment::updateOrCreate(

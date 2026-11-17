@@ -40,7 +40,7 @@ class KomisiController extends CrudController
     #[OA\Post(
         path: '/komisi',
         summary: 'Tambah Master Data Komisi Baru',
-        description: 'Membuat komisi senat baru.',
+        description: 'Membuat komisi atau organ kerja senat baru.',
         tags: ['Komisi & Anggota Senat'],
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
@@ -48,8 +48,8 @@ class KomisiController extends CrudController
             content: new OA\JsonContent(
                 required: ['nama_komisi'],
                 properties: [
-                    new OA\Property(property: 'nama_komisi', type: 'string', example: 'Komisi I (Bidang Akademik)'),
-                    new OA\Property(property: 'deskripsi', type: 'string', example: 'Bidang Pembelajaran, Kurikulum, dan Penjaminan Mutu')
+                    new OA\Property(property: 'nama_komisi', type: 'string', example: 'Badan Pekerja (BP)'),
+                    new OA\Property(property: 'deskripsi', type: 'string', example: 'Koordinasi kerja antar-komisi dan penyiapan berkas sidang')
                 ]
             )
         ),
@@ -127,18 +127,29 @@ class KomisiController extends CrudController
     )]
     public function publicCommittees()
     {
-        $komisis = Komisi::with(['enrollments.user'])->get();
+        $komisis = Komisi::with(['enrollments.user'])->orderBy('id_komisi')->get();
 
         $data = $komisis->map(function ($komisi) {
             $ketua = $komisi->enrollments->first(function ($enrollment) {
-                return str_contains(strtolower($enrollment->jabatan_komisi ?? ''), 'ketua');
+                $jab = strtolower(trim($enrollment->jabatan_komisi ?? ''));
+                return $jab === 'ketua'
+                    || str_starts_with($jab, 'ketua komisi')
+                    || str_starts_with($jab, 'ketua bp');
             });
 
             $secretary = $komisi->enrollments->first(function ($enrollment) {
-                return str_contains(strtolower($enrollment->jabatan_komisi ?? ''), 'sekretaris');
+                $jab = strtolower(trim($enrollment->jabatan_komisi ?? ''));
+                return $jab === 'sekretaris'
+                    || str_starts_with($jab, 'sekretaris komisi')
+                    || str_starts_with($jab, 'sekretaris bp');
             });
 
-            $code = strtoupper(str_replace('Komisi ', 'KOM-', $komisi->nama_komisi));
+            $namaLower = strtolower(trim($komisi->nama_komisi));
+            if ($namaLower === 'bp' || str_contains($namaLower, 'badan pekerja')) {
+                $code = 'BP';
+            } else {
+                $code = strtoupper(str_replace('Komisi ', 'KOM-', $komisi->nama_komisi));
+            }
 
             return [
                 'id' => $komisi->id_komisi,
@@ -169,6 +180,34 @@ class KomisiController extends CrudController
         ]);
     }
 
+    /** Resolusi entitas Komisi berdasarkan ID numerik, kode KOM-*, BP, atau nama komisi. */
+    private function resolveKomisi(string|int $identifier): ?Komisi
+    {
+        if (is_numeric($identifier)) {
+            $komisi = Komisi::find($identifier);
+            if ($komisi) {
+                return $komisi;
+            }
+        }
+
+        $raw = trim((string) $identifier);
+        $lower = strtolower($raw);
+        if ($lower === 'bp' || str_contains($lower, 'badan pekerja')) {
+            $komisi = Komisi::where('nama_komisi', 'like', '%Badan Pekerja%')
+                ->orWhere('nama_komisi', 'BP')
+                ->first();
+            if ($komisi) {
+                return $komisi;
+            }
+        }
+
+        $codeQuery = str_replace('KOM-', 'Komisi ', $raw);
+        return Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")
+            ->orWhere('nama_komisi', 'like', "%{$raw}%")
+            ->orWhere('id_komisi', $raw)
+            ->first();
+    }
+
     #[OA\Post(
         path: '/committees/members',
         summary: 'Tambah Anggota ke Komisi Senat',
@@ -183,8 +222,8 @@ class KomisiController extends CrudController
                     new OA\Property(property: 'nama', type: 'string', example: 'Dr. Sukamto, S.Kom., M.T.'),
                     new OA\Property(property: 'nim_nip', type: 'string', example: '197101172003121001'),
                     new OA\Property(property: 'email', type: 'string', format: 'email', example: 'senat1@senat.polines.ac.id'),
-                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-1', description: 'ID numerik komisi atau kode komisi (KOM-1 s.d. KOM-5)'),
-                    new OA\Property(property: 'jabatan_komisi', type: 'string', example: 'Ketua', description: 'Jabatan dalam komisi (Ketua, Sekretaris, Anggota)'),
+                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-I', description: 'ID numerik atau kode unit kerja (KOM-I s.d. KOM-V, atau BP)'),
+                    new OA\Property(property: 'jabatan_komisi', type: 'string', example: 'Ketua', description: 'Jabatan dalam komisi / BP (Ketua, Sekretaris, Anggota)'),
                     new OA\Property(property: 'foto_profil', type: 'string', nullable: true)
                 ]
             )
@@ -205,16 +244,7 @@ class KomisiController extends CrudController
             'foto_profil' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $komisi = null;
-        if (is_numeric($validated['id_komisi'])) {
-            $komisi = Komisi::find($validated['id_komisi']);
-        }
-        if (! $komisi) {
-            $codeQuery = str_replace('KOM-', 'Komisi ', (string)$validated['id_komisi']);
-            $komisi = Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")
-                ->orWhere('id_komisi', $validated['id_komisi'])
-                ->first();
-        }
+        $komisi = $this->resolveKomisi($validated['id_komisi']);
         if (! $komisi) {
             $komisi = Komisi::firstOrCreate(
                 ['nama_komisi' => is_numeric($validated['id_komisi']) ? "Komisi {$validated['id_komisi']}" : (string)$validated['id_komisi']],
@@ -344,8 +374,7 @@ class KomisiController extends CrudController
             if ($user) {
                 $query = Enrollment::with('user')->where('id_user', $user->id_user);
                 if (!empty($validated['id_komisi'])) {
-                    $codeQuery = str_replace('KOM-', 'Komisi ', (string)$validated['id_komisi']);
-                    $komisi = Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")->orWhere('id_komisi', $validated['id_komisi'])->first();
+                    $komisi = $this->resolveKomisi($validated['id_komisi']);
                     if ($komisi) {
                         $query->where('id_komisi', $komisi->id_komisi);
                     }
@@ -355,8 +384,7 @@ class KomisiController extends CrudController
                 // Jika belum punya enrollment di komisi ini, buat enrollment baru
                 if (! $enrollment) {
                     $periode = PeriodeSenat::latest('id_periode_senat')->first();
-                    $codeQuery = str_replace('KOM-', 'Komisi ', (string)($validated['id_komisi'] ?? '1'));
-                    $komisi = Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")->orWhere('id_komisi', $validated['id_komisi'] ?? 1)->first();
+                    $komisi = $this->resolveKomisi($validated['id_komisi'] ?? 1);
                     if ($komisi && $periode) {
                         $enrollment = Enrollment::create([
                             'id_user' => $user->id_user,
@@ -375,9 +403,7 @@ class KomisiController extends CrudController
                 $enrollment->jabatan_komisi = $validated['jabatan_komisi'];
             }
             if (!empty($validated['id_komisi'])) {
-                $komisi = is_numeric($validated['id_komisi'])
-                    ? Komisi::find($validated['id_komisi'])
-                    : Komisi::where('nama_komisi', 'like', "%{$validated['id_komisi']}%")->first();
+                $komisi = $this->resolveKomisi($validated['id_komisi']);
                 if ($komisi) {
                     $enrollment->id_komisi = $komisi->id_komisi;
                 }
@@ -440,7 +466,7 @@ class KomisiController extends CrudController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID Enrollment, ID User, atau slug nama anggota', schema: new OA\Schema(type: 'string', example: '1')),
             new OA\Parameter(name: 'nama', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'committee_code', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'KOM-1'))
+            new OA\Parameter(name: 'committee_code', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'KOM-I'))
         ],
         responses: [
             new OA\Response(response: 200, description: 'Anggota berhasil dihapus dari komisi'),
@@ -467,8 +493,7 @@ class KomisiController extends CrudController
                 $query = Enrollment::where('id_user', $user->id_user);
                 $commCode = $request->input('committee_code');
                 if ($commCode) {
-                    $codeQuery = str_replace('KOM-', 'Komisi ', (string)$commCode);
-                    $komisi = Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")->orWhere('id_komisi', $commCode)->first();
+                    $komisi = $this->resolveKomisi($commCode);
                     if ($komisi) {
                         $query->where('id_komisi', $komisi->id_komisi);
                     }

@@ -18,50 +18,31 @@ class MasterSeeder extends Seeder
     public function run(): void
     {
         $periode = PeriodeSenat::firstOrCreate(
-            ['nama_periode' => '2025/2026'],
-            ['tanggal_mulai' => '2025-09-01', 'tanggal_selesai' => '2026-08-31']
+            ['nama_periode' => '2026–2029'],
+            ['tanggal_mulai' => '2026-09-01', 'tanggal_selesai' => '2029-08-31']
         );
 
-        $komisis = collect(['Komisi A' => 'Bidang Akademik', 'Komisi B' => 'Bidang Kemahasiswaan', 'Komisi C' => 'Bidang Sarana dan Prasarana'])
-            ->map(fn ($desk, $nama) => Komisi::firstOrCreate(['nama_komisi' => $nama], ['deskripsi' => $desk]))
+        $komisiDefs = [
+            1 => ['nama_komisi' => 'Komisi I', 'deskripsi' => 'Komisi Pendidikan dan Pengajaran'],
+            2 => ['nama_komisi' => 'Komisi II', 'deskripsi' => 'Komisi Penelitian dan Pengabdian kepada Masyarakat'],
+            3 => ['nama_komisi' => 'Komisi III', 'deskripsi' => 'Komisi Kelembagaan dan Sumber Daya Manusia (Pengembangan SDM)'],
+            4 => ['nama_komisi' => 'Komisi IV', 'deskripsi' => 'Komisi Pengembangan dan Kerja Sama'],
+            5 => ['nama_komisi' => 'Komisi V', 'deskripsi' => 'Komisi Etik'],
+            6 => ['nama_komisi' => 'BP (Badan Pekerja)', 'deskripsi' => 'Koordinasi kerja antar-komisi, penyusunan rancangan agenda sidang, dan penyiapan berkas persidangan.'],
+        ];
+        $komisis = collect($komisiDefs)
+            ->map(fn ($desk, $id) => Komisi::updateOrCreate(['id_komisi' => $id], $desk))
             ->values();
 
-        foreach (['Akademik', 'Fasilitas', 'Kemahasiswaan', 'Lainnya'] as $k) {
+        foreach (['Akademik', 'Fasilitas', 'Kemahasiswaan', 'Lainnya', 'Etik', 'Badan Pekerja (BP)'] as $k) {
             KategoriAspirasi::firstOrCreate(['nama_kategori' => $k]);
         }
 
-        foreach (['Rapat Pleno', 'Rapat Komisi', 'Rapat Koordinasi'] as $j) {
+        foreach (['Rapat Pleno', 'Rapat Komisi', 'Rapat Koordinasi', 'Rapat Pimpinan', 'Rapat BP (Badan Pekerja)'] as $j) {
             JenisRapat::firstOrCreate(['nama_jenis' => $j]);
         }
 
-        $jabatan = [
-            '197101172003121001' => 'Ketua',
-            '197607202008011011' => 'Sekretaris',
-            '198701252014042001' => 'Anggota',
-            '197206291999031001' => 'Anggota',
-            '2021001' => 'Ketua',
-            '2021002' => 'Sekretaris',
-            '2021003' => 'Anggota',
-            '2021004' => 'Anggota',
-        ];
-
-        foreach (array_keys($jabatan) as $i => $nim) {
-            $user = User::where('nim_nip', $nim)->first();
-            if (! $user) {
-                continue;
-            }
-
-            $enrollment = Enrollment::firstOrCreate([
-                'id_user' => $user->id_user,
-                'id_komisi' => $komisis[$i % $komisis->count()]->id_komisi,
-                'id_periode_senat' => $periode->id_periode_senat,
-            ], ['jabatan_komisi' => $jabatan[$nim]]);
-
-            StrukturOrganisasi::firstOrCreate(
-                ['id_enrollment' => $enrollment->id_enrollment],
-                ['jabatan' => $jabatan[$nim], 'periode' => $periode->nama_periode, 'urutan_bagan' => $i + 1]
-            );
-        }
+        $this->call(OrganisasiSenatSeeder::class);
 
         $kategoriFasilitas = KategoriAspirasi::where('nama_kategori', 'Fasilitas')->first();
         $kategoriAkademik = KategoriAspirasi::where('nama_kategori', 'Akademik')->first();
@@ -99,7 +80,7 @@ class MasterSeeder extends Seeder
                 ['id_aspirasi' => $asp2->id_aspirasi],
                 [
                     'id_user' => $adminUser->id_user,
-                    'pesan' => 'Aspirasi telah diterima Komisi A. Saat ini sedang dikoordinasikan dengan bagian akademik perihal mekanisme surat izin dispensasi.',
+                    'pesan' => 'Aspirasi telah diterima Komisi I. Saat ini sedang dikoordinasikan dengan bagian akademik perihal mekanisme surat izin dispensasi.',
                     'tanggal_kirim' => now()->subDays(3),
                 ]
             );
