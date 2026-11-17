@@ -61,16 +61,29 @@ class RapatSeeder extends Seeder
         $users = [];
         foreach ($daftarAnggota as $index => $item) {
             $email = 'senat' . ($index + 1) . '@senat.polines.ac.id';
-            
-            $u = User::updateOrCreate(
-                ['email' => $email],
-                [
+
+            $u = User::where('nim_nip', $item['nim_nip'])->first()
+                ?? User::where('email', $email)->first();
+
+            if ($u) {
+                $nimTakenByOther = User::where('nim_nip', $item['nim_nip'])
+                    ->where('id_user', '!=', $u->id_user)
+                    ->exists();
+
+                $updates = ['nama' => $item['nama']];
+                if (! $nimTakenByOther) {
+                    $updates['nim_nip'] = $item['nim_nip'];
+                }
+                $u->update($updates);
+            } else {
+                $u = User::create([
+                    'email' => $email,
                     'nim_nip' => $item['nim_nip'],
                     'nama' => $item['nama'],
                     'role' => 'anggota',
                     'password' => 'password',
-                ]
-            );
+                ]);
+            }
             $users[] = $u;
         }
 
