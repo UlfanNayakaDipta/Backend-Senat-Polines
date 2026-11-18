@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HeroSettingController;
+
+Route::get('hero-settings', [HeroSettingController::class, 'show']);
+Route::put('hero-settings', [HeroSettingController::class, 'update'])->middleware(['auth:sanctum', 'role:admin']);
 use App\Http\Controllers\PeriodeSenatController;
 use App\Http\Controllers\KomisiController;
 use App\Http\Controllers\EnrollmentController;
