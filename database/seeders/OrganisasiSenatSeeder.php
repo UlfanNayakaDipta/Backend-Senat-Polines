@@ -185,16 +185,17 @@ class OrganisasiSenatSeeder extends Seeder
                 ?? User::where('email', $profile['email'])->first();
 
             $fotoProfil = 'images/members/' . $nip . '.jpg';
+            $fotoTersedia = file_exists(public_path($fotoProfil));
 
             if ($user) {
                 $nimTakenByOther = User::where('nim_nip', $nip)
                     ->where('id_user', '!=', $user->id_user)
                     ->exists();
 
-                $updates = [
-                    'nama' => $profile['nama'],
-                    'foto_profil' => $fotoProfil,
-                ];
+                $updates = ['nama' => $profile['nama']];
+                if ($fotoTersedia) {
+                    $updates['foto_profil'] = $fotoProfil;
+                }
                 if (! $nimTakenByOther) {
                     $updates['nim_nip'] = $nip;
                 }
@@ -206,7 +207,7 @@ class OrganisasiSenatSeeder extends Seeder
                     'email' => $profile['email'],
                     'role' => 'anggota',
                     'password' => 'password',
-                    'foto_profil' => $fotoProfil,
+                    'foto_profil' => $fotoTersedia ? $fotoProfil : null,
                 ]);
             }
 
