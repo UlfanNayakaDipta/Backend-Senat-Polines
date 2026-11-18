@@ -130,15 +130,40 @@ class KomisiController extends CrudController
     {
         $komisis = Komisi::with(['enrollments.user', 'tugas'])->orderBy('id_komisi')->get();
 
-        $data = $komisis->map(function ($komisi) {
-            $ketua = $komisi->enrollments->first(function ($enrollment) {
+        // Hanya tampilkan keanggotaan pada periode senat aktif (terbaru),
+        // agar enrollment periode lama tidak ikut muncul di direktori publik.
+        $activePeriodeId = PeriodeSenat::latest('id_periode_senat')->value('id_periode_senat');
+
+        $data = $komisis->map(function ($komisi) use ($activePeriodeId) {
+            $enrollments = $activePeriodeId
+                ? $komisi->enrollments->where('id_periode_senat', $activePeriodeId)
+                : $komisi->enrollments;
+
+            // Satu orang dapat memegang lebih dari satu jabatan (mis. Ketua Senat + Anggota komisi).
+            // Tampilkan sekali saja dengan prioritas jabatan komisi: Ketua > Sekretaris > Anggota.
+            $memberRank = function ($enrollment): int {
+                $jab = strtolower(trim($enrollment->jabatan_komisi ?? ''));
+                return match (true) {
+                    $jab === 'ketua' => 1,
+                    $jab === 'sekretaris' => 2,
+                    str_starts_with($jab, 'anggota') => 3,
+                    default => 4,
+                };
+            };
+
+            $uniqueMembers = $enrollments
+                ->sortBy(fn ($e) => $memberRank($e))
+                ->unique(fn ($e) => $e->id_user)
+                ->values();
+
+            $ketua = $enrollments->first(function ($enrollment) {
                 $jab = strtolower(trim($enrollment->jabatan_komisi ?? ''));
                 return $jab === 'ketua'
                     || str_starts_with($jab, 'ketua komisi')
                     || str_starts_with($jab, 'ketua bp');
             });
 
-            $secretary = $komisi->enrollments->first(function ($enrollment) {
+            $secretary = $enrollments->first(function ($enrollment) {
                 $jab = strtolower(trim($enrollment->jabatan_komisi ?? ''));
                 return $jab === 'sekretaris'
                     || str_starts_with($jab, 'sekretaris komisi')
@@ -169,8 +194,8 @@ class KomisiController extends CrudController
                 'focus' => $komisi->deskripsi ?? 'Belum ada deskripsi komisi.',
                 'tupoksi' => $tupoksiText,
                 'tupoksi_items' => $tupoksiItems,
-                'members_count' => $komisi->enrollments->count(),
-                'members' => $komisi->enrollments->map(function ($enrollment) {
+                'members_count' => $uniqueMembers->count(),
+                'members' => $uniqueMembers->map(function ($enrollment) {
                     return [
                         'id_enrollment' => $enrollment->id_enrollment,
                         'id_user' => $enrollment->user?->id_user,
@@ -201,6 +226,13 @@ class KomisiController extends CrudController
         }
 
         $raw = trim((string) $identifier);
+
+        // Cocokkan langsung dengan kolom kode komisi resmi (KOM-I s.d. KOM-V, BP).
+        $komisi = Komisi::where('kode', $raw)->first();
+        if ($komisi) {
+            return $komisi;
+        }
+
         $lower = strtolower($raw);
         if ($lower === 'bp' || str_contains($lower, 'badan pekerja')) {
             $komisi = Komisi::where('nama_komisi', 'like', '%Badan Pekerja%')
@@ -256,10 +288,10 @@ class KomisiController extends CrudController
 
         $komisi = $this->resolveKomisi($validated['id_komisi']);
         if (! $komisi) {
-            $komisi = Komisi::firstOrCreate(
-                ['nama_komisi' => is_numeric($validated['id_komisi']) ? "Komisi {$validated['id_komisi']}" : (string)$validated['id_komisi']],
-                ['deskripsi' => 'Komisi Senat Akademik Polines']
-            );
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Komisi tidak ditemukan. Gunakan kode komisi yang valid (contoh: KOM-I s.d. KOM-V, atau BP).',
+            ], 422);
         }
 
         $periode = PeriodeSenat::latest('id_periode_senat')->first();
@@ -320,6 +352,7 @@ class KomisiController extends CrudController
                 'nim_nip' => $user->nim_nip,
                 'jabatan_komisi' => $enrollment->jabatan_komisi,
                 'komisi_name' => $komisi->nama_komisi,
+                'foto_profil' => $user->foto_profil,
             ]
         ], 201);
     }
@@ -363,6 +396,14 @@ class KomisiController extends CrudController
             'jabatan_komisi' => ['sometimes', 'required', 'string', 'max:255'],
             'foto_profil' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Tolak kode komisi yang tidak dikenal agar tidak membuat data komisi sampah.
+        if (! empty($validated['id_komisi']) && ! $this->resolveKomisi($validated['id_komisi'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Komisi tidak ditemukan. Gunakan kode komisi yang valid (contoh: KOM-I s.d. KOM-V, atau BP).',
+            ], 422);
+        }
 
         $enrollment = null;
         if (is_numeric($id)) {
@@ -430,6 +471,9 @@ class KomisiController extends CrudController
                 if ($request->has('email') && !empty($validated['email'])) {
                     $enrollment->user->email = $validated['email'];
                 }
+                if ($request->has('foto_profil') && !empty($validated['foto_profil'])) {
+                    $enrollment->user->foto_profil = $validated['foto_profil'];
+                }
                 $enrollment->user->save();
             }
 
@@ -441,6 +485,7 @@ class KomisiController extends CrudController
                     'nama' => $enrollment->user?->nama,
                     'nim_nip' => $enrollment->user?->nim_nip,
                     'jabatan_komisi' => $enrollment->jabatan_komisi,
+                    'foto_profil' => $enrollment->user?->foto_profil,
                 ]
             ]);
         }
