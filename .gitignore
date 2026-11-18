@@ -25,3 +25,6 @@ yarn-error.log
 /.vscode
 /public/uploads/
 /public/uploads/rekaman/
+
+# local sqlite database (DB_DATABASE is a relative path)
+/senat_polines
