@@ -639,6 +639,111 @@
                 }
             }
         },
+        "/hero-settings": {
+            "get": {
+                "tags": [
+                    "Hero"
+                ],
+                "summary": "Baca pengaturan Hero beranda",
+                "description": "Endpoint publik. Mengembalikan nilai tersimpan atau nilai default jika belum ada.",
+                "operationId": "528202d2e5da352d99b094f2857946a5",
+                "responses": {
+                    "200": {
+                        "description": "Pengaturan Hero",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HeroSettings"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Pengaturan Hero tidak tersedia"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Hero"
+                ],
+                "summary": "Perbarui pengaturan Hero beranda",
+                "description": "Hanya admin yang terautentikasi. Semua empat field wajib diisi; label dan tautan CTA tidak dapat diubah melalui endpoint ini.",
+                "operationId": "eb3e8a06b6ac80bc94bb7c0e18719f43",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "eyebrow",
+                                    "title",
+                                    "description",
+                                    "background_image"
+                                ],
+                                "properties": {
+                                    "eyebrow": {
+                                        "description": "Satu baris dan tidak kosong.",
+                                        "type": "string",
+                                        "example": "Organ Tertinggi Normatif Akademik",
+                                        "maxLength": 160
+                                    },
+                                    "title": {
+                                        "description": "Satu atau dua baris, tanpa baris kosong.",
+                                        "type": "string",
+                                        "example": "Senat Akademik\nPoliteknik Negeri Semarang",
+                                        "maxLength": 160
+                                    },
+                                    "description": {
+                                        "description": "Teks tidak kosong.",
+                                        "type": "string",
+                                        "example": "Perumus kebijakan akademik dan penjaga mutu pendidikan vokasi.",
+                                        "maxLength": 500
+                                    },
+                                    "background_image": {
+                                        "description": "Path aman di bawah /images/ atau URL HTTP(S) valid tanpa kredensial.",
+                                        "type": "string",
+                                        "example": "/images/gedung-polines.jpg",
+                                        "maxLength": 2048
+                                    }
+                                },
+                                "type": "object",
+                                "additionalProperties": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pengaturan tersimpan termasuk label CTA yang dipertahankan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HeroSettings"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token tidak ada atau tidak valid"
+                    },
+                    "403": {
+                        "description": "Hanya admin yang dapat mengubah pengaturan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal atau field tidak dapat diubah"
+                    },
+                    "503": {
+                        "description": "Pengaturan Hero gagal disimpan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/jenis-rapat": {
             "get": {
                 "tags": [
@@ -3936,6 +4041,57 @@
         }
     },
     "components": {
+        "schemas": {
+            "HeroSettings": {
+                "required": [
+                    "eyebrow",
+                    "title",
+                    "description",
+                    "background_image",
+                    "primary_label",
+                    "secondary_label"
+                ],
+                "properties": {
+                    "eyebrow": {
+                        "type": "string",
+                        "example": "Organ Tertinggi Normatif Akademik",
+                        "maxLength": 160
+                    },
+                    "title": {
+                        "description": "Satu atau dua baris, tanpa baris kosong.",
+                        "type": "string",
+                        "example": "Senat Akademik\nPoliteknik Negeri Semarang",
+                        "maxLength": 160
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Perumus kebijakan akademik dan penjaga mutu pendidikan vokasi.",
+                        "maxLength": 500
+                    },
+                    "background_image": {
+                        "description": "Path aman di bawah /images/ atau URL HTTP(S) valid tanpa kredensial.",
+                        "type": "string",
+                        "example": "/images/gedung-polines.jpg",
+                        "maxLength": 2048
+                    },
+                    "primary_label": {
+                        "description": "Label CTA yang tersimpan, hanya dapat dibaca.",
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "Profil & Komisi",
+                        "maxLength": 80
+                    },
+                    "secondary_label": {
+                        "description": "Label CTA yang tersimpan, hanya dapat dibaca.",
+                        "type": "string",
+                        "readOnly": true,
+                        "example": "Repositori Produk Hukum",
+                        "maxLength": 80
+                    }
+                },
+                "type": "object"
+            }
+        },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
@@ -4005,6 +4161,10 @@
         {
             "name": "Master Data",
             "description": "Master data periode senat, jenis rapat, kategori aspirasi, dan struktur organisasi"
+        },
+        {
+            "name": "Hero",
+            "description": "Hero"
         }
     ]
 }

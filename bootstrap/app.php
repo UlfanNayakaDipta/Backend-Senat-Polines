@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo(fn () => null);
+        $middleware->trimStrings(except: [fn ($request) => $request->is('api/hero-settings')]);
+        $middleware->convertEmptyStringsToNull(except: [fn ($request) => $request->is('api/hero-settings')]);
         $middleware->alias([
             'api.token' => ApiTokenAuth::class,
             'api.role' => ApiRoleAuth::class,
