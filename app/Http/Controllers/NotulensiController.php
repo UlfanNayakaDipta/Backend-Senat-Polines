@@ -20,7 +20,7 @@ class NotulensiController extends CrudController
             'id_rapat' => ['required', 'exists:rapats,id_rapat'],
             'id_user' => ['required', 'exists:users,id_user'],
             'isi_notulensi' => ['required', 'string'],
-            'status' => ['nullable', 'string', 'in:draf,review,disahkan,Draf,Review,Disahkan'],
+            'status' => ['nullable', 'string', 'in:ditetapkan,dipertimbangkan,dikembalikan,Ditetapkan,Dipertimbangkan,Dikembalikan'],
             'rekomendasi_keputusan' => ['nullable', 'string', 'in:Pertimbangan,Penetapan,Keputusan'],
             'file_risalah' => ['nullable', 'string', 'max:500'],
             'tanggal_dibuat' => ['nullable', 'date'],
@@ -34,7 +34,7 @@ class NotulensiController extends CrudController
         tags: ['Notulensi & Risalah'],
         parameters: [
             new OA\Parameter(name: 'id_rapat', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draf', 'review', 'disahkan'])),
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['ditetapkan', 'dipertimbangkan', 'dikembalikan'])),
             new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', example: 15))
@@ -89,7 +89,7 @@ class NotulensiController extends CrudController
                     new OA\Property(property: 'id_rapat', type: 'integer', example: 1),
                     new OA\Property(property: 'id_user', type: 'integer', example: 3),
                     new OA\Property(property: 'isi_notulensi', type: 'string', example: 'Rapat pleno memutuskan penerimaan usulan kurikulum OBE 2026.'),
-                    new OA\Property(property: 'status', type: 'string', enum: ['draf', 'review', 'disahkan'], example: 'draf'),
+                    new OA\Property(property: 'status', type: 'string', enum: ['ditetapkan', 'dipertimbangkan', 'dikembalikan'], example: 'dipertimbangkan'),
                     new OA\Property(property: 'rekomendasi_keputusan', type: 'string', enum: ['Pertimbangan', 'Penetapan', 'Keputusan'], example: 'Penetapan'),
                     new OA\Property(property: 'file_risalah', type: 'string', nullable: true),
                     new OA\Property(property: 'tanggal_dibuat', type: 'string', format: 'date', example: '2026-11-12')
@@ -131,7 +131,7 @@ class NotulensiController extends CrudController
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: 'isi_notulensi', type: 'string'),
-                    new OA\Property(property: 'status', type: 'string', enum: ['draf', 'review', 'disahkan'], example: 'disahkan'),
+                    new OA\Property(property: 'status', type: 'string', enum: ['ditetapkan', 'dipertimbangkan', 'dikembalikan'], example: 'ditetapkan'),
                     new OA\Property(property: 'rekomendasi_keputusan', type: 'string', enum: ['Pertimbangan', 'Penetapan', 'Keputusan'])
                 ]
             )

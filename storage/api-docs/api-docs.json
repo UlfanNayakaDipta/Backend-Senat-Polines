@@ -1660,9 +1660,9 @@
                         "schema": {
                             "type": "string",
                             "enum": [
-                                "draf",
-                                "review",
-                                "disahkan"
+                                "ditetapkan",
+                                "dipertimbangkan",
+                                "dikembalikan"
                             ]
                         }
                     },
@@ -1730,11 +1730,11 @@
                                     },
                                     "status": {
                                         "type": "string",
-                                        "example": "draf",
+                                        "example": "dipertimbangkan",
                                         "enum": [
-                                            "draf",
-                                            "review",
-                                            "disahkan"
+                                            "ditetapkan",
+                                            "dipertimbangkan",
+                                            "dikembalikan"
                                         ]
                                     },
                                     "rekomendasi_keputusan": {
@@ -1828,11 +1828,11 @@
                                     },
                                     "status": {
                                         "type": "string",
-                                        "example": "disahkan",
+                                        "example": "ditetapkan",
                                         "enum": [
-                                            "draf",
-                                            "review",
-                                            "disahkan"
+                                            "ditetapkan",
+                                            "dipertimbangkan",
+                                            "dikembalikan"
                                         ]
                                     },
                                     "rekomendasi_keputusan": {
