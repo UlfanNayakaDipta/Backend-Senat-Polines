@@ -88,7 +88,7 @@ class ProsesRekamanJob implements ShouldQueue
                 'id_rapat' => $rekaman->id_rapat,
                 'id_user' => $rekaman->id_user,
                 'isi_notulensi' => $notulen,
-                'status' => 'draf',
+                'status' => 'dipertimbangkan',
             ]);
 
             // Notulen langsung dicetak ke PDF resmi (format FPM 5.5.01/L2).

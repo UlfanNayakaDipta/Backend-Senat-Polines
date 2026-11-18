@@ -122,7 +122,7 @@ MD;
             'id_rapat' => $rapat->id_rapat,
             'id_user' => $rapat->id_user,
             'isi_notulensi' => self::CONTOH,
-            'status' => 'draf',
+            'status' => 'dikembalikan',
         ]);
     }
 
