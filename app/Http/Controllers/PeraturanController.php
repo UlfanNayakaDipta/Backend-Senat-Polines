@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Peraturan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 
 class PeraturanController extends CrudController
@@ -20,6 +22,7 @@ class PeraturanController extends CrudController
             'kategori' => ['required', 'string', 'max:255'],
             'tahap_pembentukan' => ['required', 'string', 'max:255'],
             'file_dokumen' => ['nullable', 'string', 'max:500'],
+            'file' => ['nullable', 'file', 'mimes:pdf,doc,docx,odt,rtf,xls,xlsx,ppt,pptx', 'max:10240'],
             'tanggal_terbit' => ['required', 'date'],
         ];
     }
@@ -95,7 +98,16 @@ class PeraturanController extends CrudController
     )]
     public function store(Request $request)
     {
-        return parent::store($request);
+        $data = $request->validate($this->rules());
+        unset($data['file']);
+
+        if ($request->hasFile('file')) {
+            $data['file_dokumen'] = $request->file('file')->store('peraturan', 'public');
+        }
+
+        $item = $this->model::create($data);
+
+        return response()->json($item->load($this->with), 201);
     }
 
     #[OA\Get(
@@ -111,6 +123,30 @@ class PeraturanController extends CrudController
     public function show($id)
     {
         return parent::show($id);
+    }
+
+    public function download($id)
+    {
+        $item = $this->model::findOrFail($id);
+        $filePath = $item->file_dokumen;
+
+        if (! $filePath) {
+            abort(404, 'Berkas dokumen belum tersedia.');
+        }
+
+        if (Str::startsWith($filePath, ['http://', 'https://'])) {
+            return redirect()->away($filePath);
+        }
+
+        if (! Storage::disk('public')->exists($filePath)) {
+            abort(404, 'Berkas dokumen tidak ditemukan di penyimpanan.');
+        }
+
+        $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+        $baseName = Str::slug($item->nomor_sk ?: $item->judul ?: 'peraturan-' . $item->id_peraturan);
+        $downloadName = $ext ? "{$baseName}.{$ext}" : $baseName;
+
+        return Storage::disk('public')->download($filePath, $downloadName);
     }
 
     #[OA\Put(
@@ -134,7 +170,19 @@ class PeraturanController extends CrudController
     )]
     public function update(Request $request, $id)
     {
-        return parent::update($request, $id);
+        $item = $this->model::findOrFail($id);
+        $rules = array_map(fn ($r) => array_merge(['sometimes'], $r), $this->rules((int) $id));
+        $data = $request->validate($rules);
+        unset($data['file']);
+
+        if ($request->hasFile('file')) {
+            $this->deleteLocalFile($item->file_dokumen);
+            $data['file_dokumen'] = $request->file('file')->store('peraturan', 'public');
+        }
+
+        $item->update($data);
+
+        return $item->load($this->with);
     }
 
     #[OA\Delete(
@@ -149,6 +197,21 @@ class PeraturanController extends CrudController
     )]
     public function destroy($id)
     {
-        return parent::destroy($id);
+        $item = $this->model::findOrFail($id);
+        $this->deleteLocalFile($item->file_dokumen);
+        $item->delete();
+
+        return response()->noContent();
+    }
+
+    private function deleteLocalFile(?string $filePath): void
+    {
+        if (! $filePath || Str::startsWith($filePath, ['http://', 'https://'])) {
+            return;
+        }
+
+        if (Storage::disk('public')->exists($filePath)) {
+            Storage::disk('public')->delete($filePath);
+        }
     }
 }
