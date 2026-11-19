@@ -123,7 +123,39 @@ class KomisiController extends CrudController
         description: 'Endpoint publik untuk halaman direktori komisi frontend. Mengembalikan seluruh komisi fungsional dengan susunan Ketua, Sekretaris, daftar Anggota lengkap, NIP, email, jabatan, serta fokus mandat.',
         tags: ['Komisi & Anggota Senat'],
         responses: [
-            new OA\Response(response: 200, description: 'Data direktori komisi dan anggota berhasil dimuat')
+            new OA\Response(
+                response: 200,
+                description: 'Data direktori komisi dan anggota berhasil dimuat',
+                content: new OA\JsonContent(
+                    example: [
+                        'status' => 'success',
+                        'data' => [
+                            [
+                                'id' => 1,
+                                'code' => 'KOM-I',
+                                'name' => 'Komisi Pendidikan dan Pengajaran',
+                                'lead' => 'Tri Raharjo Yudantoro, S.Kom., M.Kom.',
+                                'secretary' => 'Iwan Budiyono, S.E., M.Si., Ak.',
+                                'focus' => 'Kebijakan & norma akademik, penjaminan mutu pembelajaran, dan kebebasan akademik.',
+                                'tupoksi' => 'Merumuskan dan memberi pertimbangan kebijakan serta norma akademik.',
+                                'tupoksi_items' => ['Merumuskan dan memberi pertimbangan kebijakan serta norma akademik.'],
+                                'members_count' => 7,
+                                'members' => [
+                                    [
+                                        'id_enrollment' => 9,
+                                        'id_user' => 43,
+                                        'nama' => 'Tri Raharjo Yudantoro, S.Kom., M.Kom.',
+                                        'nim_nip' => '196810252000121001',
+                                        'email' => 'tri.yudantoro@senat.test',
+                                        'jabatan' => 'Ketua',
+                                        'foto_profil' => 'images/members/196810252000121001.jpg',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ]
+                )
+            )
         ]
     )]
     public function publicCommittees()
@@ -266,13 +298,34 @@ class KomisiController extends CrudController
                     new OA\Property(property: 'email', type: 'string', format: 'email', example: 'senat1@senat.polines.ac.id'),
                     new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-I', description: 'ID numerik atau kode unit kerja (KOM-I s.d. KOM-V, atau BP)'),
                     new OA\Property(property: 'jabatan_komisi', type: 'string', example: 'Ketua', description: 'Jabatan dalam komisi / BP (Ketua, Sekretaris, Anggota)'),
-                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true)
+                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true, example: 'images/members/197101172003121001.jpg', description: 'Path foto profil (opsional)')
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Anggota berhasil ditambahkan ke komisi'),
-            new OA\Response(response: 422, description: 'Validasi data gagal')
+            new OA\Response(
+                response: 201,
+                description: 'Anggota berhasil ditambahkan ke komisi',
+                content: new OA\JsonContent(
+                    example: [
+                        'status' => 'success',
+                        'message' => 'Anggota berhasil ditambahkan ke komisi',
+                        'data' => [
+                            'id_enrollment' => 61,
+                            'id_user' => 70,
+                            'id_komisi' => 1,
+                            'nama' => 'Dr. Sukamto, S.Kom., M.T.',
+                            'nim_nip' => '197101172003121001',
+                            'jabatan_komisi' => 'Anggota',
+                            'komisi_name' => 'Komisi Pendidikan dan Pengajaran',
+                            'foto_profil' => 'images/members/197101172003121001.jpg',
+                        ],
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Belum login / token akses tidak valid'),
+            new OA\Response(response: 403, description: 'Token valid tetapi role tidak berhak (khusus admin/ketua/sekretaris)'),
+            new OA\Response(response: 422, description: 'Validasi data gagal atau kode komisi tidak dikenal')
         ]
     )]
     public function storeMember(Request $request)
@@ -373,16 +426,34 @@ class KomisiController extends CrudController
                     new OA\Property(property: 'nama_lama', type: 'string', nullable: true),
                     new OA\Property(property: 'nim_nip', type: 'string', example: '197101172003121001'),
                     new OA\Property(property: 'email', type: 'string', format: 'email', example: 'senat1@senat.polines.ac.id'),
-                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-1'),
+                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-I'),
                     new OA\Property(property: 'jabatan_komisi', type: 'string', example: 'Ketua'),
-                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true)
+                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true, example: 'images/members/197101172003121001.jpg')
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Data anggota berhasil diperbarui'),
+            new OA\Response(
+                response: 200,
+                description: 'Data anggota berhasil diperbarui',
+                content: new OA\JsonContent(
+                    example: [
+                        'status' => 'success',
+                        'message' => 'Data anggota berhasil diperbarui',
+                        'data' => [
+                            'id_enrollment' => 9,
+                            'nama' => 'Tri Raharjo Yudantoro, S.Kom., M.Kom.',
+                            'nim_nip' => '196810252000121001',
+                            'jabatan_komisi' => 'Ketua',
+                            'foto_profil' => 'images/members/196810252000121001.jpg',
+                        ],
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Belum login / token akses tidak valid'),
+            new OA\Response(response: 403, description: 'Token valid tetapi role tidak berhak (khusus admin/ketua/sekretaris)'),
             new OA\Response(response: 404, description: 'Data anggota tidak ditemukan'),
-            new OA\Response(response: 422, description: 'Validasi data gagal')
+            new OA\Response(response: 422, description: 'Validasi data gagal atau kode komisi tidak dikenal')
         ]
     )]
     public function updateMember(Request $request, $id)
@@ -524,7 +595,18 @@ class KomisiController extends CrudController
             new OA\Parameter(name: 'committee_code', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'KOM-I'))
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Anggota berhasil dihapus dari komisi'),
+            new OA\Response(
+                response: 200,
+                description: 'Anggota berhasil dihapus dari komisi',
+                content: new OA\JsonContent(
+                    example: [
+                        'status' => 'success',
+                        'message' => 'Anggota berhasil dihapus dari komisi',
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Belum login / token akses tidak valid'),
+            new OA\Response(response: 403, description: 'Token valid tetapi role tidak berhak (khusus admin/ketua/sekretaris)'),
             new OA\Response(response: 404, description: 'Data anggota tidak ditemukan')
         ]
     )]
