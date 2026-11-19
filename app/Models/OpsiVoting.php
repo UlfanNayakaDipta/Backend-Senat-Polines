@@ -11,6 +11,7 @@ class OpsiVoting extends Model
     protected $table = 'opsi_votings';
     protected $primaryKey = 'id_opsi';
     protected $guarded = [];
+    protected $hidden = ['suaraVotings', 'suara_votings'];
     protected $appends = ['jumlah_suara'];
 
     public function voting(): BelongsTo

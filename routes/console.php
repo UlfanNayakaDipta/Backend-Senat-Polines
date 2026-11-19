@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Retensi rekaman: berkas asli dihapus setelah 90 hari, transkrip & notulensi permanen.
 Schedule::command('rekaman:bersihkan')->dailyAt('02:30')->withoutOverlapping();
+
+// Tutup sesi voting yang telah melewati waktu selesai tanpa mengubah jadwal aslinya.
+Schedule::command('voting:expire')->everyMinute()->withoutOverlapping();

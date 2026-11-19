@@ -14,6 +14,19 @@ class Rapat extends Model
     protected $primaryKey = 'id_rapat';
     protected $guarded = [];
 
+    protected static function booted(): void
+    {
+        // FK cascade menghapus ballot di level DB tanpa memicu event model anak,
+        // jadi retensi riwayat suara harus dijaga di induknya.
+        static::deleting(function (self $rapat) {
+            abort_if(
+                $rapat->votings()->whereHas('suaraVotings')->exists(),
+                422,
+                'Rapat memiliki riwayat suara voting dan tidak dapat dihapus.'
+            );
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -78,7 +91,9 @@ class Rapat extends Model
      */
     public function hitungKuorum(): array
     {
-        $anggotas = $this->anggotaRapats()->get();
+        $anggotas = $this->relationLoaded('anggotaRapats')
+            ? $this->anggotaRapats
+            : $this->anggotaRapats()->get();
         $totalInvited = $anggotas->count();
 
         $hadirCount = $anggotas->filter(fn ($a) => strtolower((string) $a->status_kehadiran) === 'hadir')->count();

@@ -12,6 +12,17 @@ class Kegiatan extends Model
     protected $primaryKey = 'id_kegiatan';
     protected $guarded = [];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $kegiatan) {
+            abort_if(
+                $kegiatan->rapats()->whereHas('votings.suaraVotings')->exists(),
+                422,
+                'Kegiatan memiliki rapat dengan riwayat suara voting dan tidak dapat dihapus.'
+            );
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'id_user', 'id_user');
