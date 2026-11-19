@@ -59,6 +59,7 @@ Route::get('kategori-aspirasi/{kategori_aspirasi}', [KategoriAspirasiController:
 Route::get('berita', [BeritaController::class, 'index']);
 Route::get('berita/{berita}', [BeritaController::class, 'show']);
 Route::get('peraturan', [PeraturanController::class, 'index']);
+Route::get('peraturan/{id}/download', [PeraturanController::class, 'download']);
 Route::get('peraturan/{peraturan}', [PeraturanController::class, 'show']);
 
 // Public aspirations (submit and tracking)
@@ -226,8 +227,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('peraturan/{peraturan}', [PeraturanController::class, 'update']);
         Route::delete('peraturan/{peraturan}', [PeraturanController::class, 'destroy']);
 
-        // User Management & Impersonation
-        Route::post('admin/impersonate/{id}', [AuthController::class, 'impersonate']);
+        // User Management
         Route::post('user', [UserController::class, 'store']);
         Route::put('user/{user}', [UserController::class, 'update']);
         Route::delete('user/{user}', [UserController::class, 'destroy']);
