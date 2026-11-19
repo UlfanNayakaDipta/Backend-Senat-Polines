@@ -102,6 +102,14 @@ class NotulenPdfService
     /** Daftarkan font lokal: Liberation Sans (metrik Arial) + DejaVu Sans untuk kop. */
     private function daftarkanFont($fontMetrics): void
     {
+        foreach (array_unique(array_filter([
+            storage_path('fonts'),
+            config('dompdf.options.font_dir'),
+            config('dompdf.options.font_cache'),
+        ])) as $fontDir) {
+            File::ensureDirectoryExists($fontDir, 0775);
+        }
+
         $dir = base_path(self::FONT_DIR);
         foreach ([
             ['RapatBody', 'normal', 'LiberationSans-Regular.ttf'],

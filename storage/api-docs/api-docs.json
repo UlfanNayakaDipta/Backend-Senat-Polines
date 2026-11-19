@@ -35,7 +35,30 @@
                     "Aspirasi"
                 ],
                 "summary": "Daftar Aspirasi Sivitas Akademika",
+                "description": "Mengambil daftar aspirasi publik beserta relasi user, kategori, dan tanggapans.user.",
                 "operationId": "cf9de2f4ba423cb1196ae4a67b9d292a",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Jumlah item per halaman (default 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 15
+                        }
+                    },
+                    {
+                        "name": "all",
+                        "in": "query",
+                        "description": "Set true untuk mengambil semua data tanpa paginasi",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": false
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Daftar aspirasi terpaginasi"
@@ -130,6 +153,7 @@
                     "Aspirasi"
                 ],
                 "summary": "Perbarui Status/Isi Aspirasi",
+                "description": "Memperbarui status tindak lanjut atau data aspirasi. Khusus role admin, ketua_senat, atau sekretaris.",
                 "operationId": "9f61100bef6f51edefab386ee3637495",
                 "parameters": [
                     {
@@ -146,12 +170,28 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
+                                    "id_user": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_kategori": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "status": {
                                         "type": "string",
                                         "example": "Diproses"
                                     },
                                     "isi_aspirasi": {
                                         "type": "string"
+                                    },
+                                    "lampiran": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "anonim": {
+                                        "type": "boolean",
+                                        "example": false
                                     }
                                 },
                                 "type": "object"
@@ -162,6 +202,18 @@
                 "responses": {
                     "200": {
                         "description": "Aspirasi berhasil diperbarui"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak (khusus admin/ketua_senat/sekretaris)"
+                    },
+                    "404": {
+                        "description": "Aspirasi tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validasi data gagal"
                     }
                 },
                 "security": [
@@ -175,6 +227,7 @@
                     "Aspirasi"
                 ],
                 "summary": "Hapus Aspirasi",
+                "description": "Menghapus data aspirasi. Khusus role admin, ketua_senat, atau sekretaris.",
                 "operationId": "73456f21cb5c2b8dbe5c4a839e4ee42f",
                 "parameters": [
                     {
@@ -189,6 +242,15 @@
                 "responses": {
                     "204": {
                         "description": "Aspirasi berhasil dihapus"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak (khusus admin/ketua_senat/sekretaris)"
+                    },
+                    "404": {
+                        "description": "Aspirasi tidak ditemukan"
                     }
                 },
                 "security": [
@@ -950,6 +1012,28 @@
                 ],
                 "summary": "Daftar Kategori Aspirasi Sivitas",
                 "operationId": "1ec97414a3bc33acba77ac8b791a3183",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Jumlah item per halaman (default 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 15
+                        }
+                    },
+                    {
+                        "name": "all",
+                        "in": "query",
+                        "description": "Set true untuk mengambil semua data tanpa paginasi",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": false
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Daftar kategori aspirasi (Akademik, Kemahasiswaan, Sarana & Prasarana, dll)"
@@ -961,6 +1045,7 @@
                     "Aspirasi"
                 ],
                 "summary": "Tambah Kategori Aspirasi Baru",
+                "description": "Menambah kategori aspirasi baru. Khusus role admin, ketua_senat, atau sekretaris.",
                 "operationId": "69eed562d4a4f358afb591da5b62f523",
                 "requestBody": {
                     "required": true,
@@ -984,6 +1069,12 @@
                 "responses": {
                     "201": {
                         "description": "Kategori aspirasi berhasil dibuat"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak (khusus admin/ketua_senat/sekretaris)"
                     },
                     "422": {
                         "description": "Validasi gagal"
@@ -1027,6 +1118,7 @@
                     "Aspirasi"
                 ],
                 "summary": "Perbarui Kategori Aspirasi",
+                "description": "Memperbarui nama kategori aspirasi. Khusus role admin, ketua_senat, atau sekretaris.",
                 "operationId": "a36730553fe382796b1d317ffb261d56",
                 "parameters": [
                     {
@@ -1056,6 +1148,18 @@
                 "responses": {
                     "200": {
                         "description": "Kategori berhasil diperbarui"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak"
+                    },
+                    "404": {
+                        "description": "Kategori tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
                     }
                 },
                 "security": [
@@ -1069,6 +1173,7 @@
                     "Aspirasi"
                 ],
                 "summary": "Hapus Kategori Aspirasi",
+                "description": "Menghapus kategori aspirasi. Khusus role admin, ketua_senat, atau sekretaris.",
                 "operationId": "eef8c8392adaca0c462ae6fd4c835c67",
                 "parameters": [
                     {
@@ -1083,6 +1188,15 @@
                 "responses": {
                     "204": {
                         "description": "Kategori berhasil dihapus"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak"
+                    },
+                    "404": {
+                        "description": "Kategori tidak ditemukan"
                     }
                 },
                 "security": [
@@ -3647,6 +3761,226 @@
                     },
                     "422": {
                         "description": "Voting belum dibuka, sudah memberikan suara, atau opsi tidak valid"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/tanggapan-aspirasi": {
+            "get": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Daftar Tanggapan Aspirasi Senat",
+                "description": "Mengambil daftar tanggapan resmi Senat Akademik atas aspirasi sivitas akademika (publik untuk transparansi).",
+                "operationId": "c2b83323fc62ebf41d8fea4cc16f85cc",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Jumlah item per halaman (default 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 15
+                        }
+                    },
+                    {
+                        "name": "all",
+                        "in": "query",
+                        "description": "Set true untuk mengambil semua data tanpa paginasi",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar tanggapan aspirasi beserta data penanggap"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Kirim Tanggapan Resmi Aspirasi",
+                "description": "Menambahkan tanggapan resmi atas aspirasi tertentu. Khusus role admin, ketua_senat, atau sekretaris.",
+                "operationId": "944dee0583b94241957f243c65bb523b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id_aspirasi",
+                                    "id_user",
+                                    "pesan"
+                                ],
+                                "properties": {
+                                    "id_aspirasi": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_user": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pesan": {
+                                        "type": "string",
+                                        "example": "Aspirasi telah diteruskan ke Komisi terkait dan sedang ditindaklanjuti."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tanggapan aspirasi berhasil disimpan"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak (khusus admin/ketua_senat/sekretaris)"
+                    },
+                    "422": {
+                        "description": "Validasi data gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/tanggapan-aspirasi/{id}": {
+            "get": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Detail Tanggapan Aspirasi",
+                "operationId": "0a530932f1ef3792fd162db6156debb2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail tanggapan aspirasi"
+                    },
+                    "404": {
+                        "description": "Tanggapan tidak ditemukan"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Perbarui Tanggapan Aspirasi",
+                "description": "Memperbarui isi tanggapan resmi aspirasi. Khusus role admin, ketua_senat, atau sekretaris.",
+                "operationId": "616a4b6d00c68288428879df0af709ec",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "id_aspirasi": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "id_user": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "pesan": {
+                                        "type": "string",
+                                        "example": "Tindak lanjut telah dijadwalkan pada rapat pleno berikutnya."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tanggapan aspirasi berhasil diperbarui"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak"
+                    },
+                    "404": {
+                        "description": "Tanggapan tidak ditemukan"
+                    },
+                    "422": {
+                        "description": "Validasi data gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Aspirasi"
+                ],
+                "summary": "Hapus Tanggapan Aspirasi",
+                "description": "Menghapus tanggapan aspirasi. Khusus role admin, ketua_senat, atau sekretaris.",
+                "operationId": "5d4bfdc86e5c484c1465a9aaaca8a0e4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Tanggapan aspirasi berhasil dihapus"
+                    },
+                    "401": {
+                        "description": "Belum terautentikasi"
+                    },
+                    "403": {
+                        "description": "Akses ditolak"
+                    },
+                    "404": {
+                        "description": "Tanggapan tidak ditemukan"
                     }
                 },
                 "security": [

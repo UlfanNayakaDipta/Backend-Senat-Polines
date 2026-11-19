@@ -22,6 +22,10 @@ class KategoriAspirasiController extends CrudController
         path: '/kategori-aspirasi',
         summary: 'Daftar Kategori Aspirasi Sivitas',
         tags: ['Aspirasi'],
+        parameters: [
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Jumlah item per halaman (default 15)', schema: new OA\Schema(type: 'integer', example: 15)),
+            new OA\Parameter(name: 'all', in: 'query', required: false, description: 'Set true untuk mengambil semua data tanpa paginasi', schema: new OA\Schema(type: 'boolean', example: false)),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'Daftar kategori aspirasi (Akademik, Kemahasiswaan, Sarana & Prasarana, dll)')
         ]
@@ -34,6 +38,7 @@ class KategoriAspirasiController extends CrudController
     #[OA\Post(
         path: '/kategori-aspirasi',
         summary: 'Tambah Kategori Aspirasi Baru',
+        description: 'Menambah kategori aspirasi baru. Khusus role admin, ketua_senat, atau sekretaris.',
         tags: ['Aspirasi'],
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
@@ -47,7 +52,9 @@ class KategoriAspirasiController extends CrudController
         ),
         responses: [
             new OA\Response(response: 201, description: 'Kategori aspirasi berhasil dibuat'),
-            new OA\Response(response: 422, description: 'Validasi gagal')
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (khusus admin/ketua_senat/sekretaris)'),
+            new OA\Response(response: 422, description: 'Validasi gagal'),
         ]
     )]
     public function store(Request $request)
@@ -73,6 +80,7 @@ class KategoriAspirasiController extends CrudController
     #[OA\Put(
         path: '/kategori-aspirasi/{id}',
         summary: 'Perbarui Kategori Aspirasi',
+        description: 'Memperbarui nama kategori aspirasi. Khusus role admin, ketua_senat, atau sekretaris.',
         tags: ['Aspirasi'],
         security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
@@ -84,7 +92,11 @@ class KategoriAspirasiController extends CrudController
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Kategori berhasil diperbarui')
+            new OA\Response(response: 200, description: 'Kategori berhasil diperbarui'),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak'),
+            new OA\Response(response: 404, description: 'Kategori tidak ditemukan'),
+            new OA\Response(response: 422, description: 'Validasi gagal'),
         ]
     )]
     public function update(Request $request, $id)
@@ -95,11 +107,15 @@ class KategoriAspirasiController extends CrudController
     #[OA\Delete(
         path: '/kategori-aspirasi/{id}',
         summary: 'Hapus Kategori Aspirasi',
+        description: 'Menghapus kategori aspirasi. Khusus role admin, ketua_senat, atau sekretaris.',
         tags: ['Aspirasi'],
         security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
-            new OA\Response(response: 204, description: 'Kategori berhasil dihapus')
+            new OA\Response(response: 204, description: 'Kategori berhasil dihapus'),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak'),
+            new OA\Response(response: 404, description: 'Kategori tidak ditemukan'),
         ]
     )]
     public function destroy($id)
