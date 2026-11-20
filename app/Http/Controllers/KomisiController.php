@@ -158,13 +158,16 @@ class KomisiController extends CrudController
             )
         ]
     )]
-    public function publicCommittees()
+    public function publicCommittees(Request $request)
     {
         $komisis = Komisi::with(['enrollments.user', 'tugas'])->orderBy('id_komisi')->get();
 
-        // Hanya tampilkan keanggotaan pada periode senat aktif (terbaru),
-        // agar enrollment periode lama tidak ikut muncul di direktori publik.
-        $activePeriodeId = PeriodeSenat::latest('id_periode_senat')->value('id_periode_senat');
+        // Gunakan periode dari query ?id_periode_senat=... jika ada, atau periode aktif saat ini.
+        $requestedPeriodeId = $request->integer('id_periode_senat');
+        $selectedPeriode = $requestedPeriodeId
+            ? PeriodeSenat::find($requestedPeriodeId)
+            : PeriodeSenat::active();
+        $activePeriodeId = $selectedPeriode?->id_periode_senat;
 
         $data = $komisis->map(function ($komisi) use ($activePeriodeId) {
             $enrollments = $activePeriodeId
@@ -243,6 +246,7 @@ class KomisiController extends CrudController
 
         return response()->json([
             'status' => 'success',
+            'periode' => $selectedPeriode,
             'data' => $data,
         ]);
     }
@@ -337,6 +341,7 @@ class KomisiController extends CrudController
             'id_komisi' => ['required'],
             'jabatan_komisi' => ['required', 'string', 'max:255'],
             'foto_profil' => ['nullable', 'string', 'max:255'],
+            'id_periode_senat' => ['nullable', 'integer', 'exists:periode_senats,id_periode_senat'],
         ]);
 
         $komisi = $this->resolveKomisi($validated['id_komisi']);
@@ -347,12 +352,15 @@ class KomisiController extends CrudController
             ], 422);
         }
 
-        $periode = PeriodeSenat::latest('id_periode_senat')->first();
+        $periode = !empty($validated['id_periode_senat'])
+            ? PeriodeSenat::find($validated['id_periode_senat'])
+            : PeriodeSenat::active();
         if (! $periode) {
             $periode = PeriodeSenat::create([
                 'nama_periode' => '2026–2029',
                 'tanggal_mulai' => now()->toDateString(),
                 'tanggal_selesai' => now()->addYears(3)->toDateString(),
+                'is_active' => true,
             ]);
         }
 
@@ -505,7 +513,9 @@ class KomisiController extends CrudController
 
                 // Jika belum punya enrollment di komisi ini, buat enrollment baru
                 if (! $enrollment) {
-                    $periode = PeriodeSenat::latest('id_periode_senat')->first();
+                    $periode = $request->filled('id_periode_senat')
+                        ? PeriodeSenat::find($request->integer('id_periode_senat'))
+                        : PeriodeSenat::active();
                     $komisi = $this->resolveKomisi($validated['id_komisi'] ?? 1);
                     if ($komisi && $periode) {
                         $enrollment = Enrollment::create([
