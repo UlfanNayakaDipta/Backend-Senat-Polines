@@ -181,6 +181,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Master Data Senat
         Route::post('periode-senat', [PeriodeSenatController::class, 'store']);
+        Route::post('periode-senat/{periode_senat}/activate', [PeriodeSenatController::class, 'activate']);
         Route::put('periode-senat/{periode_senat}', [PeriodeSenatController::class, 'update']);
         Route::delete('periode-senat/{periode_senat}', [PeriodeSenatController::class, 'destroy']);
 
