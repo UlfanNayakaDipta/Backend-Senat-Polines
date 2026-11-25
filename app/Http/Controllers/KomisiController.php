@@ -13,13 +13,14 @@ use OpenApi\Attributes as OA;
 class KomisiController extends CrudController
 {
     protected string $model = Komisi::class;
-    protected array $with = [];
+    protected array $with = ['tugas'];
 
     protected function rules(?int $id = null): array
     {
         return [
-            'nama_komisi' => ['required','string','max:255'],
-            'deskripsi' => ['nullable','string'],
+            'kode' => ['nullable', 'string', 'max:20', 'unique:komisis,kode,' . ($id ?? 'NULL') . ',id_komisi'],
+            'nama_komisi' => ['required', 'string', 'max:255'],
+            'deskripsi' => ['nullable', 'string'],
         ];
     }
 
@@ -40,7 +41,7 @@ class KomisiController extends CrudController
     #[OA\Post(
         path: '/komisi',
         summary: 'Tambah Master Data Komisi Baru',
-        description: 'Membuat komisi senat baru.',
+        description: 'Membuat komisi atau organ kerja senat baru.',
         tags: ['Komisi & Anggota Senat'],
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
@@ -48,8 +49,8 @@ class KomisiController extends CrudController
             content: new OA\JsonContent(
                 required: ['nama_komisi'],
                 properties: [
-                    new OA\Property(property: 'nama_komisi', type: 'string', example: 'Komisi I (Bidang Akademik)'),
-                    new OA\Property(property: 'deskripsi', type: 'string', example: 'Bidang Pembelajaran, Kurikulum, dan Penjaminan Mutu')
+                    new OA\Property(property: 'nama_komisi', type: 'string', example: 'Badan Pekerja (BP)'),
+                    new OA\Property(property: 'deskripsi', type: 'string', example: 'Koordinasi kerja antar-komisi dan penyiapan berkas sidang')
                 ]
             )
         ),
@@ -122,23 +123,102 @@ class KomisiController extends CrudController
         description: 'Endpoint publik untuk halaman direktori komisi frontend. Mengembalikan seluruh komisi fungsional dengan susunan Ketua, Sekretaris, daftar Anggota lengkap, NIP, email, jabatan, serta fokus mandat.',
         tags: ['Komisi & Anggota Senat'],
         responses: [
-            new OA\Response(response: 200, description: 'Data direktori komisi dan anggota berhasil dimuat')
+            new OA\Response(
+                response: 200,
+                description: 'Data direktori komisi dan anggota berhasil dimuat',
+                content: new OA\JsonContent(
+                    example: [
+                        'status' => 'success',
+                        'data' => [
+                            [
+                                'id' => 1,
+                                'code' => 'KOM-I',
+                                'name' => 'Komisi Pendidikan dan Pengajaran',
+                                'lead' => 'Tri Raharjo Yudantoro, S.Kom., M.Kom.',
+                                'secretary' => 'Iwan Budiyono, S.E., M.Si., Ak.',
+                                'focus' => 'Kebijakan & norma akademik, penjaminan mutu pembelajaran, dan kebebasan akademik.',
+                                'tupoksi' => 'Merumuskan dan memberi pertimbangan kebijakan serta norma akademik.',
+                                'tupoksi_items' => ['Merumuskan dan memberi pertimbangan kebijakan serta norma akademik.'],
+                                'members_count' => 7,
+                                'members' => [
+                                    [
+                                        'id_enrollment' => 9,
+                                        'id_user' => 43,
+                                        'nama' => 'Tri Raharjo Yudantoro, S.Kom., M.Kom.',
+                                        'nim_nip' => '196810252000121001',
+                                        'email' => 'tri.yudantoro@senat.test',
+                                        'jabatan' => 'Ketua',
+                                        'foto_profil' => 'images/members/196810252000121001.jpg',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ]
+                )
+            )
         ]
     )]
-    public function publicCommittees()
+    public function publicCommittees(Request $request)
     {
-        $komisis = Komisi::with(['enrollments.user'])->get();
+        $komisis = Komisi::with(['enrollments.user', 'tugas'])->orderBy('id_komisi')->get();
 
-        $data = $komisis->map(function ($komisi) {
-            $ketua = $komisi->enrollments->first(function ($enrollment) {
-                return str_contains(strtolower($enrollment->jabatan_komisi ?? ''), 'ketua');
+        // Gunakan periode dari query ?id_periode_senat=... jika ada, atau periode aktif saat ini.
+        $requestedPeriodeId = $request->integer('id_periode_senat');
+        $selectedPeriode = $requestedPeriodeId
+            ? PeriodeSenat::find($requestedPeriodeId)
+            : PeriodeSenat::active();
+        $activePeriodeId = $selectedPeriode?->id_periode_senat;
+
+        $data = $komisis->map(function ($komisi) use ($activePeriodeId) {
+            $enrollments = $activePeriodeId
+                ? $komisi->enrollments->where('id_periode_senat', $activePeriodeId)
+                : $komisi->enrollments;
+
+            // Satu orang dapat memegang lebih dari satu jabatan (mis. Ketua Senat + Anggota komisi).
+            // Tampilkan sekali saja dengan prioritas jabatan komisi: Ketua > Sekretaris > Anggota.
+            $memberRank = function ($enrollment): int {
+                $jab = strtolower(trim($enrollment->jabatan_komisi ?? ''));
+                return match (true) {
+                    $jab === 'ketua' => 1,
+                    $jab === 'sekretaris' => 2,
+                    str_starts_with($jab, 'anggota') => 3,
+                    default => 4,
+                };
+            };
+
+            $uniqueMembers = $enrollments
+                ->sortBy(fn ($e) => $memberRank($e))
+                ->unique(fn ($e) => $e->id_user)
+                ->values();
+
+            $ketua = $enrollments->first(function ($enrollment) {
+                $jab = strtolower(trim($enrollment->jabatan_komisi ?? ''));
+                return $jab === 'ketua'
+                    || str_starts_with($jab, 'ketua komisi')
+                    || str_starts_with($jab, 'ketua bp');
             });
 
-            $secretary = $komisi->enrollments->first(function ($enrollment) {
-                return str_contains(strtolower($enrollment->jabatan_komisi ?? ''), 'sekretaris');
+            $secretary = $enrollments->first(function ($enrollment) {
+                $jab = strtolower(trim($enrollment->jabatan_komisi ?? ''));
+                return $jab === 'sekretaris'
+                    || str_starts_with($jab, 'sekretaris komisi')
+                    || str_starts_with($jab, 'sekretaris bp');
             });
 
-            $code = strtoupper(str_replace('Komisi ', 'KOM-', $komisi->nama_komisi));
+            $code = $komisi->kode;
+            if (! $code) {
+                $namaLower = strtolower(trim($komisi->nama_komisi));
+                if ($namaLower === 'bp' || str_contains($namaLower, 'badan pekerja')) {
+                    $code = 'BP';
+                } else {
+                    $code = strtoupper(str_replace('Komisi ', 'KOM-', $komisi->nama_komisi));
+                }
+            }
+
+            $tupoksiItems = $komisi->tugas->pluck('uraian_tugas')->values()->all();
+            $tupoksiText = ! empty($tupoksiItems)
+                ? implode('; ', $tupoksiItems)
+                : ($komisi->deskripsi ?? 'Belum ada deskripsi tugas pokok dan fungsi.');
 
             return [
                 'id' => $komisi->id_komisi,
@@ -147,9 +227,10 @@ class KomisiController extends CrudController
                 'lead' => $ketua?->user?->nama ?? 'Belum ditentukan',
                 'secretary' => $secretary?->user?->nama ?? 'Belum ditentukan',
                 'focus' => $komisi->deskripsi ?? 'Belum ada deskripsi komisi.',
-                'tupoksi' => $komisi->deskripsi ?? 'Belum ada deskripsi tugas pokok dan fungsi.',
-                'members_count' => $komisi->enrollments->count(),
-                'members' => $komisi->enrollments->map(function ($enrollment) {
+                'tupoksi' => $tupoksiText,
+                'tupoksi_items' => $tupoksiItems,
+                'members_count' => $uniqueMembers->count(),
+                'members' => $uniqueMembers->map(function ($enrollment) {
                     return [
                         'id_enrollment' => $enrollment->id_enrollment,
                         'id_user' => $enrollment->user?->id_user,
@@ -165,8 +246,44 @@ class KomisiController extends CrudController
 
         return response()->json([
             'status' => 'success',
+            'periode' => $selectedPeriode,
             'data' => $data,
         ]);
+    }
+
+    /** Resolusi entitas Komisi berdasarkan ID numerik, kode KOM-*, BP, atau nama komisi. */
+    private function resolveKomisi(string|int $identifier): ?Komisi
+    {
+        if (is_numeric($identifier)) {
+            $komisi = Komisi::find($identifier);
+            if ($komisi) {
+                return $komisi;
+            }
+        }
+
+        $raw = trim((string) $identifier);
+
+        // Cocokkan langsung dengan kolom kode komisi resmi (KOM-I s.d. KOM-V, BP).
+        $komisi = Komisi::where('kode', $raw)->first();
+        if ($komisi) {
+            return $komisi;
+        }
+
+        $lower = strtolower($raw);
+        if ($lower === 'bp' || str_contains($lower, 'badan pekerja')) {
+            $komisi = Komisi::where('nama_komisi', 'like', '%Badan Pekerja%')
+                ->orWhere('nama_komisi', 'BP')
+                ->first();
+            if ($komisi) {
+                return $komisi;
+            }
+        }
+
+        $codeQuery = str_replace('KOM-', 'Komisi ', $raw);
+        return Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")
+            ->orWhere('nama_komisi', 'like', "%{$raw}%")
+            ->orWhere('id_komisi', $raw)
+            ->first();
     }
 
     #[OA\Post(
@@ -183,15 +300,36 @@ class KomisiController extends CrudController
                     new OA\Property(property: 'nama', type: 'string', example: 'Dr. Sukamto, S.Kom., M.T.'),
                     new OA\Property(property: 'nim_nip', type: 'string', example: '197101172003121001'),
                     new OA\Property(property: 'email', type: 'string', format: 'email', example: 'senat1@senat.polines.ac.id'),
-                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-1', description: 'ID numerik komisi atau kode komisi (KOM-1 s.d. KOM-5)'),
-                    new OA\Property(property: 'jabatan_komisi', type: 'string', example: 'Ketua', description: 'Jabatan dalam komisi (Ketua, Sekretaris, Anggota)'),
-                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true)
+                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-I', description: 'ID numerik atau kode unit kerja (KOM-I s.d. KOM-V, atau BP)'),
+                    new OA\Property(property: 'jabatan_komisi', type: 'string', example: 'Ketua', description: 'Jabatan dalam komisi / BP (Ketua, Sekretaris, Anggota)'),
+                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true, example: 'images/members/197101172003121001.jpg', description: 'Path foto profil (opsional)')
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Anggota berhasil ditambahkan ke komisi'),
-            new OA\Response(response: 422, description: 'Validasi data gagal')
+            new OA\Response(
+                response: 201,
+                description: 'Anggota berhasil ditambahkan ke komisi',
+                content: new OA\JsonContent(
+                    example: [
+                        'status' => 'success',
+                        'message' => 'Anggota berhasil ditambahkan ke komisi',
+                        'data' => [
+                            'id_enrollment' => 61,
+                            'id_user' => 70,
+                            'id_komisi' => 1,
+                            'nama' => 'Dr. Sukamto, S.Kom., M.T.',
+                            'nim_nip' => '197101172003121001',
+                            'jabatan_komisi' => 'Anggota',
+                            'komisi_name' => 'Komisi Pendidikan dan Pengajaran',
+                            'foto_profil' => 'images/members/197101172003121001.jpg',
+                        ],
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Belum login / token akses tidak valid'),
+            new OA\Response(response: 403, description: 'Token valid tetapi role tidak berhak (khusus admin/ketua/sekretaris)'),
+            new OA\Response(response: 422, description: 'Validasi data gagal atau kode komisi tidak dikenal')
         ]
     )]
     public function storeMember(Request $request)
@@ -203,31 +341,26 @@ class KomisiController extends CrudController
             'id_komisi' => ['required'],
             'jabatan_komisi' => ['required', 'string', 'max:255'],
             'foto_profil' => ['nullable', 'string', 'max:255'],
+            'id_periode_senat' => ['nullable', 'integer', 'exists:periode_senats,id_periode_senat'],
         ]);
 
-        $komisi = null;
-        if (is_numeric($validated['id_komisi'])) {
-            $komisi = Komisi::find($validated['id_komisi']);
-        }
+        $komisi = $this->resolveKomisi($validated['id_komisi']);
         if (! $komisi) {
-            $codeQuery = str_replace('KOM-', 'Komisi ', (string)$validated['id_komisi']);
-            $komisi = Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")
-                ->orWhere('id_komisi', $validated['id_komisi'])
-                ->first();
-        }
-        if (! $komisi) {
-            $komisi = Komisi::firstOrCreate(
-                ['nama_komisi' => is_numeric($validated['id_komisi']) ? "Komisi {$validated['id_komisi']}" : (string)$validated['id_komisi']],
-                ['deskripsi' => 'Komisi Senat Akademik Polines']
-            );
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Komisi tidak ditemukan. Gunakan kode komisi yang valid (contoh: KOM-I s.d. KOM-V, atau BP).',
+            ], 422);
         }
 
-        $periode = PeriodeSenat::latest('id_periode_senat')->first();
+        $periode = !empty($validated['id_periode_senat'])
+            ? PeriodeSenat::find($validated['id_periode_senat'])
+            : PeriodeSenat::active();
         if (! $periode) {
             $periode = PeriodeSenat::create([
                 'nama_periode' => '2026–2029',
                 'tanggal_mulai' => now()->toDateString(),
                 'tanggal_selesai' => now()->addYears(3)->toDateString(),
+                'is_active' => true,
             ]);
         }
 
@@ -280,6 +413,7 @@ class KomisiController extends CrudController
                 'nim_nip' => $user->nim_nip,
                 'jabatan_komisi' => $enrollment->jabatan_komisi,
                 'komisi_name' => $komisi->nama_komisi,
+                'foto_profil' => $user->foto_profil,
             ]
         ], 201);
     }
@@ -300,16 +434,34 @@ class KomisiController extends CrudController
                     new OA\Property(property: 'nama_lama', type: 'string', nullable: true),
                     new OA\Property(property: 'nim_nip', type: 'string', example: '197101172003121001'),
                     new OA\Property(property: 'email', type: 'string', format: 'email', example: 'senat1@senat.polines.ac.id'),
-                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-1'),
+                    new OA\Property(property: 'id_komisi', type: 'string', example: 'KOM-I'),
                     new OA\Property(property: 'jabatan_komisi', type: 'string', example: 'Ketua'),
-                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true)
+                    new OA\Property(property: 'foto_profil', type: 'string', nullable: true, example: 'images/members/197101172003121001.jpg')
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Data anggota berhasil diperbarui'),
+            new OA\Response(
+                response: 200,
+                description: 'Data anggota berhasil diperbarui',
+                content: new OA\JsonContent(
+                    example: [
+                        'status' => 'success',
+                        'message' => 'Data anggota berhasil diperbarui',
+                        'data' => [
+                            'id_enrollment' => 9,
+                            'nama' => 'Tri Raharjo Yudantoro, S.Kom., M.Kom.',
+                            'nim_nip' => '196810252000121001',
+                            'jabatan_komisi' => 'Ketua',
+                            'foto_profil' => 'images/members/196810252000121001.jpg',
+                        ],
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Belum login / token akses tidak valid'),
+            new OA\Response(response: 403, description: 'Token valid tetapi role tidak berhak (khusus admin/ketua/sekretaris)'),
             new OA\Response(response: 404, description: 'Data anggota tidak ditemukan'),
-            new OA\Response(response: 422, description: 'Validasi data gagal')
+            new OA\Response(response: 422, description: 'Validasi data gagal atau kode komisi tidak dikenal')
         ]
     )]
     public function updateMember(Request $request, $id)
@@ -323,6 +475,14 @@ class KomisiController extends CrudController
             'jabatan_komisi' => ['sometimes', 'required', 'string', 'max:255'],
             'foto_profil' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // Tolak kode komisi yang tidak dikenal agar tidak membuat data komisi sampah.
+        if (! empty($validated['id_komisi']) && ! $this->resolveKomisi($validated['id_komisi'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Komisi tidak ditemukan. Gunakan kode komisi yang valid (contoh: KOM-I s.d. KOM-V, atau BP).',
+            ], 422);
+        }
 
         $enrollment = null;
         if (is_numeric($id)) {
@@ -344,8 +504,7 @@ class KomisiController extends CrudController
             if ($user) {
                 $query = Enrollment::with('user')->where('id_user', $user->id_user);
                 if (!empty($validated['id_komisi'])) {
-                    $codeQuery = str_replace('KOM-', 'Komisi ', (string)$validated['id_komisi']);
-                    $komisi = Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")->orWhere('id_komisi', $validated['id_komisi'])->first();
+                    $komisi = $this->resolveKomisi($validated['id_komisi']);
                     if ($komisi) {
                         $query->where('id_komisi', $komisi->id_komisi);
                     }
@@ -354,9 +513,10 @@ class KomisiController extends CrudController
 
                 // Jika belum punya enrollment di komisi ini, buat enrollment baru
                 if (! $enrollment) {
-                    $periode = PeriodeSenat::latest('id_periode_senat')->first();
-                    $codeQuery = str_replace('KOM-', 'Komisi ', (string)($validated['id_komisi'] ?? '1'));
-                    $komisi = Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")->orWhere('id_komisi', $validated['id_komisi'] ?? 1)->first();
+                    $periode = $request->filled('id_periode_senat')
+                        ? PeriodeSenat::find($request->integer('id_periode_senat'))
+                        : PeriodeSenat::active();
+                    $komisi = $this->resolveKomisi($validated['id_komisi'] ?? 1);
                     if ($komisi && $periode) {
                         $enrollment = Enrollment::create([
                             'id_user' => $user->id_user,
@@ -375,9 +535,7 @@ class KomisiController extends CrudController
                 $enrollment->jabatan_komisi = $validated['jabatan_komisi'];
             }
             if (!empty($validated['id_komisi'])) {
-                $komisi = is_numeric($validated['id_komisi'])
-                    ? Komisi::find($validated['id_komisi'])
-                    : Komisi::where('nama_komisi', 'like', "%{$validated['id_komisi']}%")->first();
+                $komisi = $this->resolveKomisi($validated['id_komisi']);
                 if ($komisi) {
                     $enrollment->id_komisi = $komisi->id_komisi;
                 }
@@ -394,6 +552,9 @@ class KomisiController extends CrudController
                 if ($request->has('email') && !empty($validated['email'])) {
                     $enrollment->user->email = $validated['email'];
                 }
+                if ($request->has('foto_profil') && !empty($validated['foto_profil'])) {
+                    $enrollment->user->foto_profil = $validated['foto_profil'];
+                }
                 $enrollment->user->save();
             }
 
@@ -405,6 +566,7 @@ class KomisiController extends CrudController
                     'nama' => $enrollment->user?->nama,
                     'nim_nip' => $enrollment->user?->nim_nip,
                     'jabatan_komisi' => $enrollment->jabatan_komisi,
+                    'foto_profil' => $enrollment->user?->foto_profil,
                 ]
             ]);
         }
@@ -440,10 +602,21 @@ class KomisiController extends CrudController
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID Enrollment, ID User, atau slug nama anggota', schema: new OA\Schema(type: 'string', example: '1')),
             new OA\Parameter(name: 'nama', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'committee_code', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'KOM-1'))
+            new OA\Parameter(name: 'committee_code', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'KOM-I'))
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Anggota berhasil dihapus dari komisi'),
+            new OA\Response(
+                response: 200,
+                description: 'Anggota berhasil dihapus dari komisi',
+                content: new OA\JsonContent(
+                    example: [
+                        'status' => 'success',
+                        'message' => 'Anggota berhasil dihapus dari komisi',
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Belum login / token akses tidak valid'),
+            new OA\Response(response: 403, description: 'Token valid tetapi role tidak berhak (khusus admin/ketua/sekretaris)'),
             new OA\Response(response: 404, description: 'Data anggota tidak ditemukan')
         ]
     )]
@@ -467,8 +640,7 @@ class KomisiController extends CrudController
                 $query = Enrollment::where('id_user', $user->id_user);
                 $commCode = $request->input('committee_code');
                 if ($commCode) {
-                    $codeQuery = str_replace('KOM-', 'Komisi ', (string)$commCode);
-                    $komisi = Komisi::where('nama_komisi', 'like', "%{$codeQuery}%")->orWhere('id_komisi', $commCode)->first();
+                    $komisi = $this->resolveKomisi($commCode);
                     if ($komisi) {
                         $query->where('id_komisi', $komisi->id_komisi);
                     }

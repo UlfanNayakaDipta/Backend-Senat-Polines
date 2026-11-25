@@ -17,51 +17,55 @@ class MasterSeeder extends Seeder
 {
     public function run(): void
     {
-        $periode = PeriodeSenat::firstOrCreate(
-            ['nama_periode' => '2025/2026'],
-            ['tanggal_mulai' => '2025-09-01', 'tanggal_selesai' => '2026-08-31']
+        $periode = PeriodeSenat::updateOrCreate(
+            ['nama_periode' => '2026–2030'],
+            ['tanggal_mulai' => '2026-09-01', 'tanggal_selesai' => '2030-08-31']
         );
 
-        $komisis = collect(['Komisi A' => 'Bidang Akademik', 'Komisi B' => 'Bidang Kemahasiswaan', 'Komisi C' => 'Bidang Sarana dan Prasarana'])
-            ->map(fn ($desk, $nama) => Komisi::firstOrCreate(['nama_komisi' => $nama], ['deskripsi' => $desk]))
-            ->values();
+        $komisiDefs = [
+            1 => [
+                'kode' => 'KOM-I',
+                'nama_komisi' => 'Komisi Pendidikan dan Pengajaran',
+                'deskripsi' => 'Kebijakan & norma akademik, penjaminan mutu pembelajaran, kebebasan akademik, pembukaan/penutupan prodi, serta gelar & penghargaan akademik.',
+            ],
+            2 => [
+                'kode' => 'KOM-II',
+                'nama_komisi' => 'Komisi Penelitian dan Pengabdian kepada Masyarakat',
+                'deskripsi' => 'Ketentuan tata cara penyelenggaraan penelitian, pelaksanaan pengabdian kepada masyarakat, dan pengawasannya.',
+            ],
+            3 => [
+                'kode' => 'KOM-III',
+                'nama_komisi' => 'Komisi Kelembagaan dan Sumber Daya Manusia',
+                'deskripsi' => 'Pengembangan organisasi jurusan/prodi, karier & mutu dosen/tendik, pedoman kenaikan jabatan akademik, kode etik, dan rancangan OTK Senat.',
+            ],
+            4 => [
+                'kode' => 'KOM-IV',
+                'nama_komisi' => 'Komisi Pengembangan dan Kerja Sama',
+                'deskripsi' => 'Kerja sama akademik & nonakademik dalam/luar negeri (DUDI, PT lain, lembaga sertifikasi), evaluasi hasil, serta kepatuhan MoU/PKS.',
+            ],
+            5 => [
+                'kode' => 'KOM-V',
+                'nama_komisi' => 'Komisi Etik',
+                'deskripsi' => 'Ketentuan kode etik dosen/mahasiswa/akademik, pengawasan norma akademik, dan rekomendasi sanksi kepada Direktur.',
+            ],
+            6 => [
+                'kode' => 'BP',
+                'nama_komisi' => 'BP (Badan Pekerja)',
+                'deskripsi' => 'Penetapan agenda & materi rapat pleno, pembahasan hasil rapat komisi/panja, serta penampungan aspirasi.',
+            ],
+        ];
+        collect($komisiDefs)
+            ->each(fn ($def, $id) => Komisi::updateOrCreate(['id_komisi' => $id], $def));
 
-        foreach (['Akademik', 'Fasilitas', 'Kemahasiswaan', 'Lainnya'] as $k) {
+        foreach (['Akademik', 'Fasilitas', 'Kemahasiswaan', 'Lainnya', 'Etik', 'Badan Pekerja (BP)'] as $k) {
             KategoriAspirasi::firstOrCreate(['nama_kategori' => $k]);
         }
 
-        foreach (['Rapat Pleno', 'Rapat Komisi', 'Rapat Koordinasi'] as $j) {
+        foreach (['Rapat Pleno', 'Rapat Komisi', 'Rapat Koordinasi', 'Rapat Pimpinan', 'Rapat BP (Badan Pekerja)'] as $j) {
             JenisRapat::firstOrCreate(['nama_jenis' => $j]);
         }
 
-        $jabatan = [
-            '197101172003121001' => 'Ketua',
-            '197607202008011011' => 'Sekretaris',
-            '198701252014042001' => 'Anggota',
-            '197206291999031001' => 'Anggota',
-            '2021001' => 'Ketua',
-            '2021002' => 'Sekretaris',
-            '2021003' => 'Anggota',
-            '2021004' => 'Anggota',
-        ];
-
-        foreach (array_keys($jabatan) as $i => $nim) {
-            $user = User::where('nim_nip', $nim)->first();
-            if (! $user) {
-                continue;
-            }
-
-            $enrollment = Enrollment::firstOrCreate([
-                'id_user' => $user->id_user,
-                'id_komisi' => $komisis[$i % $komisis->count()]->id_komisi,
-                'id_periode_senat' => $periode->id_periode_senat,
-            ], ['jabatan_komisi' => $jabatan[$nim]]);
-
-            StrukturOrganisasi::firstOrCreate(
-                ['id_enrollment' => $enrollment->id_enrollment],
-                ['jabatan' => $jabatan[$nim], 'periode' => $periode->nama_periode, 'urutan_bagan' => $i + 1]
-            );
-        }
+        $this->call(OrganisasiSenatSeeder::class);
 
         $kategoriFasilitas = KategoriAspirasi::where('nama_kategori', 'Fasilitas')->first();
         $kategoriAkademik = KategoriAspirasi::where('nama_kategori', 'Akademik')->first();
@@ -99,7 +103,7 @@ class MasterSeeder extends Seeder
                 ['id_aspirasi' => $asp2->id_aspirasi],
                 [
                     'id_user' => $adminUser->id_user,
-                    'pesan' => 'Aspirasi telah diterima Komisi A. Saat ini sedang dikoordinasikan dengan bagian akademik perihal mekanisme surat izin dispensasi.',
+                    'pesan' => 'Aspirasi telah diterima Komisi I. Saat ini sedang dikoordinasikan dengan bagian akademik perihal mekanisme surat izin dispensasi.',
                     'tanggal_kirim' => now()->subDays(3),
                 ]
             );

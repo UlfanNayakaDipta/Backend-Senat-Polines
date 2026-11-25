@@ -42,7 +42,8 @@ use App\Http\Controllers\ChatbotController;
 Route::get('committees', [KomisiController::class, 'publicCommittees']);
 
 // Authentication
-Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:15,1');
+Route::post('login/google', [AuthController::class, 'loginWithGoogle'])->middleware('throttle:15,1');
 
 // Public directory & master data read-only
 Route::get('periode-senat', [PeriodeSenatController::class, 'index']);
@@ -58,6 +59,7 @@ Route::get('kategori-aspirasi/{kategori_aspirasi}', [KategoriAspirasiController:
 Route::get('berita', [BeritaController::class, 'index']);
 Route::get('berita/{berita}', [BeritaController::class, 'show']);
 Route::get('peraturan', [PeraturanController::class, 'index']);
+Route::get('peraturan/{id}/download', [PeraturanController::class, 'download']);
 Route::get('peraturan/{peraturan}', [PeraturanController::class, 'show']);
 
 // Public aspirations (submit and tracking)
@@ -183,6 +185,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Master Data Senat
         Route::post('periode-senat', [PeriodeSenatController::class, 'store']);
+        Route::post('periode-senat/{periode_senat}/activate', [PeriodeSenatController::class, 'activate']);
         Route::put('periode-senat/{periode_senat}', [PeriodeSenatController::class, 'update']);
         Route::delete('periode-senat/{periode_senat}', [PeriodeSenatController::class, 'destroy']);
 
@@ -229,8 +232,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('peraturan/{peraturan}', [PeraturanController::class, 'update']);
         Route::delete('peraturan/{peraturan}', [PeraturanController::class, 'destroy']);
 
-        // User Management & Impersonation
-        Route::post('admin/impersonate/{id}', [AuthController::class, 'impersonate']);
+        // User Management
         Route::post('user', [UserController::class, 'store']);
         Route::put('user/{user}', [UserController::class, 'update']);
         Route::delete('user/{user}', [UserController::class, 'destroy']);

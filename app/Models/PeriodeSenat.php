@@ -11,6 +11,16 @@ class PeriodeSenat extends Model
     protected $primaryKey = 'id_periode_senat';
     protected $guarded = [];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public static function active(): ?self
+    {
+        return static::where('is_active', true)->first()
+            ?? static::latest('id_periode_senat')->first();
+    }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class, 'id_periode_senat', 'id_periode_senat');

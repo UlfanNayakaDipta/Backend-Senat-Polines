@@ -29,4 +29,10 @@ class Notulensi extends Model
     {
         return Attribute::get(fn () => $this->berkas_pdf ? url($this->berkas_pdf) : null);
     }
+
+    /** Status notulensi selalu disimpan huruf kecil: ditetapkan / dipertimbangkan / dikembalikan. */
+    protected function status(): Attribute
+    {
+        return Attribute::make(set: fn (?string $value) => $value === null ? null : strtolower(trim($value)));
+    }
 }

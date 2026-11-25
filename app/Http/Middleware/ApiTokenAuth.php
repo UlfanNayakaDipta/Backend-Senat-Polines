@@ -42,7 +42,11 @@ class ApiTokenAuth
 
         if (class_exists(PersonalAccessToken::class)) {
             $sanctumToken = PersonalAccessToken::findToken($token);
-            if ($sanctumToken && $sanctumToken->tokenable) {
+            $isValid = $sanctumToken
+                && (!$sanctumToken->expires_at || $sanctumToken->expires_at->isFuture())
+                && $sanctumToken->tokenable;
+
+            if ($isValid) {
                 Auth::setUser($sanctumToken->tokenable);
                 $request->setUserResolver(fn () => $sanctumToken->tokenable);
 
