@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rapat;
 use App\Models\Voting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class VotingController extends CrudController
     public function __construct()
     {
         $this->with = [
-            'rapat.anggotaRapats', 'suaraVotings',
+            'rapat.anggotaRapats',
             'opsiVotings' => fn ($q) => $q->withCount('suaraVotings'),
         ];
     }
@@ -26,7 +27,7 @@ class VotingController extends CrudController
             'id_rapat' => [$id ? 'sometimes' : 'required', 'exists:rapats,id_rapat'],
             'judul_voting' => [$id ? 'sometimes' : 'required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
-            'status' => ['nullable', 'string', 'max:255'],
+            'status' => ['sometimes', 'required', \Illuminate\Validation\Rule::in(['draft', 'dibuka', 'ditutup'])],
             'waktu_mulai' => ['nullable', 'date'],
             'waktu_selesai' => ['nullable', 'date', 'after:waktu_mulai'],
             'opsi' => ['nullable', 'array'],
@@ -37,11 +38,12 @@ class VotingController extends CrudController
     #[OA\Get(
         path: '/voting',
         summary: 'Daftar Sesi E-Voting Sidang Senat',
-        description: 'Mengambil daftar sesi pemungutan suara (e-voting) rapat senat beserta jumlah suara.',
+        description: 'Mengambil daftar sesi pemungutan suara (e-voting) rapat senat beserta jumlah suara. Filter status menerima nilai legacy baca (aktif/active/open/berlangsung => dibuka, selesai/closed => ditutup). Filter active=1 hanya mengembalikan sesi berstatus terbuka yang jendela waktunya sedang berjalan (masa depan dan kedaluwarsa dikecualikan). all=1 mengembalikan {data:[...]} tanpa paginasi; selain itu default 15 per halaman.',
         tags: ['Voting'],
         parameters: [
-            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'dibuka', 'ditutup'])),
-            new OA\Parameter(name: 'active', in: 'query', required: false, schema: new OA\Schema(type: 'boolean'))
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'dibuka', 'ditutup', 'aktif', 'open', 'berlangsung', 'selesai', 'closed', 'active'])),
+            new OA\Parameter(name: 'active', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'all', in: 'query', required: false, schema: new OA\Schema(type: 'boolean'))
         ],
         responses: [
             new OA\Response(response: 200, description: 'Daftar voting terpaginasi')
@@ -53,18 +55,35 @@ class VotingController extends CrudController
         $query = Voting::with($this->with)->withCount('suaraVotings');
 
         if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
+            $query->whereIn('status', self::statusVariants((string) $request->query('status')));
         } elseif ($request->boolean('active') || $request->query('active') === '1') {
-            $query->where('status', 'dibuka');
+            $query->whereIn('status', ['dibuka', 'aktif', 'active', 'open', 'berlangsung'])
+                ->where(fn ($q) => $q->whereNull('waktu_mulai')->orWhere('waktu_mulai', '<=', now()))
+                ->where(fn ($q) => $q->whereNull('waktu_selesai')->orWhere('waktu_selesai', '>', now()));
+        }
+
+        if ($request->boolean('all')) {
+            return response()->json(['data' => $query->latest()->get()]);
         }
 
         return $query->latest()->paginate(15);
     }
 
+    public static function statusVariants(string $status): array
+    {
+        $status = strtolower($status);
+
+        return match ($status) {
+            'dibuka', 'aktif', 'active', 'open', 'berlangsung' => ['dibuka', 'aktif', 'active', 'open', 'berlangsung'],
+            'ditutup', 'selesai', 'closed' => ['ditutup', 'selesai', 'closed'],
+            default => [$status],
+        };
+    }
+
     #[OA\Post(
         path: '/voting',
         summary: 'Buat Sesi E-Voting Baru',
-        description: 'Membuat agenda pemungutan suara sidang senat beserta opsi pilihan (default: Setuju, Tidak Setuju, Abstain).',
+        description: 'Membuat agenda pemungutan suara sidang senat beserta opsi pilihan (default: Setuju, Tidak Setuju, Abstain) secara atomik. Hanya satu sesi boleh berstatus dibuka: sesi lain yang masih terbuka otomatis ditutup dalam transaksi dan kunci bersama evoting-write. Status pada saat menulis hanya menerima draft, dibuka, atau ditutup (nilai legacy aktif/open/berlangsung/selesai/closed ditolak).',
         tags: ['Voting'],
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
@@ -89,11 +108,12 @@ class VotingController extends CrudController
             new OA\Response(response: 201, description: 'Sesi voting berhasil dibuat'),
             new OA\Response(response: 401, description: 'Belum terautentikasi'),
             new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
-            new OA\Response(response: 422, description: 'Validasi gagal')
+            new OA\Response(response: 422, description: 'Validasi gagal: status bukan draft/dibuka/ditutup, waktu_selesai harus setelah waktu_mulai, atau payload tidak valid')
         ]
     )]
     public function store(Request $request): JsonResponse
     {
+        return Voting::writeLocked(function () use ($request) {
         $data = $request->validate($this->rules());
 
         $votingData = Arr::except($data, ['opsi']);
@@ -120,6 +140,7 @@ class VotingController extends CrudController
         }
 
         return response()->json($voting->fresh($this->with), 201);
+        });
     }
 
     #[OA\Post(
@@ -138,7 +159,14 @@ class VotingController extends CrudController
     )]
     public function buka($id): JsonResponse
     {
-        $voting = Voting::findOrFail($id);
+        return Voting::writeLocked(function () use ($id) {
+        $voting = Voting::whereKey($id)->lockForUpdate()->firstOrFail();
+        abort_if($voting->status === 'ditutup'
+            || ($voting->waktu_selesai && $voting->waktu_selesai->lessThanOrEqualTo(now())), 422);
+        if ($voting->status === 'dibuka') {
+            return response()->json($voting->fresh($this->with));
+        }
+        $voting->assertEditable();
 
         // Tutup sesi voting lain yang masih terbuka agar tidak ada duplikasi sesi aktif
         Voting::whereIn('status', ['dibuka', 'aktif', 'active', 'open'])
@@ -151,10 +179,11 @@ class VotingController extends CrudController
         $voting->update([
             'status' => 'dibuka',
             'waktu_mulai' => $voting->waktu_mulai ?? now(),
-            'waktu_selesai' => null,
+            'waktu_selesai' => $voting->waktu_selesai,
         ]);
 
         return response()->json($voting->fresh($this->with));
+        });
     }
 
     #[OA\Post(
@@ -173,23 +202,61 @@ class VotingController extends CrudController
     )]
     public function tutup($id): JsonResponse
     {
-        $voting = Voting::findOrFail($id);
-        $voting->update([
-            'status' => 'ditutup',
-            'waktu_selesai' => now(),
-        ]);
+        return Voting::writeLocked(function () use ($id) {
+            $voting = Voting::whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($voting->status !== 'ditutup') {
+                $voting->update([
+                    'status' => 'ditutup',
+                    'waktu_selesai' => $voting->waktu_selesai ?? now(),
+                ]);
+            }
 
-        return response()->json($voting->fresh($this->with));
+            return response()->json($voting->fresh($this->with));
+        });
+    }
+
+    public function kuorumPayload(?Rapat $rapat): array
+    {
+        return $rapat ? $rapat->hitungKuorum() : [
+            'total_invited' => 0, 'present_count' => 0, 'izin_count' => 0,
+            'tidak_hadir_count' => 0, 'menunggu_count' => 0, 'kuorum_min_persen' => 67,
+            'ambang_kuorum' => 0, 'present_percentage' => 0, 'is_kuorum' => false,
+            'status_kuorum_label' => 'Belum Memenuhi Kuorum',
+            'is_presensi_open' => false, 'is_kuorum_locked' => false,
+        ];
     }
 
     #[OA\Get(
         path: '/voting/{id}/rekap',
         summary: 'Rekapitulasi Hasil E-Voting & Status Kuorum Sidang',
-        description: 'Menampilkan ringkasan perolehan suara per opsi, persentase kehadiran kuorum, dan hasil keputusan sidang.',
+        description: 'Publik dan read-only (tetap 200 untuk sesi tertutup). Kuorum berasal dari satu sumber kebenaran Rapat::hitungKuorum(): blok kuorum berisi total_invited, present_count, izin_count, tidak_hadir_count, menunggu_count, kuorum_min_persen, ambang_kuorum, present_percentage, is_kuorum, status_kuorum_label beserta alias kompatibilitas total_undangan, total_hadir, persentase_kehadiran, dan kuorum_terpenuhi (selalu sama dengan is_kuorum). Hanya status kehadiran tepat "hadir" dihitung; izin/tidak_hadir/menunggu/tanpa status tidak menaikkan present_count. keputusan_sidang bernilai null kecuali kuorum terpenuhi DAN ada satu pemenang tunggal; keputusan_alasan berisi kuorum_belum_terpenuhi, tidak_ada_suara, seri, atau null. Seri diungkap lewat seri=true dan opsi_seri. Payload tidak pernah memuat baris ballot.',
         tags: ['Voting'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
-            new OA\Response(response: 200, description: 'Hasil rekapitulasi voting dan keputusan sidang')
+            new OA\Response(response: 200, description: 'Hasil rekapitulasi, blok kuorum kanonik, dan keputusan sidang', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'kuorum', type: 'object', properties: [
+                    new OA\Property(property: 'total_invited', type: 'integer'),
+                    new OA\Property(property: 'present_count', type: 'integer'),
+                    new OA\Property(property: 'izin_count', type: 'integer'),
+                    new OA\Property(property: 'tidak_hadir_count', type: 'integer'),
+                    new OA\Property(property: 'menunggu_count', type: 'integer'),
+                    new OA\Property(property: 'kuorum_min_persen', type: 'integer'),
+                    new OA\Property(property: 'ambang_kuorum', type: 'integer'),
+                    new OA\Property(property: 'present_percentage', type: 'number'),
+                    new OA\Property(property: 'is_kuorum', type: 'boolean'),
+                    new OA\Property(property: 'status_kuorum_label', type: 'string'),
+                    new OA\Property(property: 'total_undangan', type: 'integer', description: 'Alias total_invited'),
+                    new OA\Property(property: 'total_hadir', type: 'integer', description: 'Alias present_count'),
+                    new OA\Property(property: 'total_suara', type: 'integer'),
+                    new OA\Property(property: 'persentase_kehadiran', type: 'number', description: 'Alias present_percentage'),
+                    new OA\Property(property: 'kuorum_terpenuhi', type: 'boolean', description: 'Alias is_kuorum'),
+                ]),
+                new OA\Property(property: 'keputusan_sidang', type: 'string', nullable: true),
+                new OA\Property(property: 'keputusan_alasan', type: 'string', nullable: true, enum: ['kuorum_belum_terpenuhi', 'tidak_ada_suara', 'seri', null]),
+                new OA\Property(property: 'seri', type: 'boolean'),
+                new OA\Property(property: 'opsi_seri', type: 'array', items: new OA\Items(type: 'string')),
+            ])),
+            new OA\Response(response: 404, description: 'Sesi voting tidak ditemukan')
         ]
     )]
     public function rekap($id): JsonResponse
@@ -201,33 +268,54 @@ class VotingController extends CrudController
         ])->withCount('suaraVotings')->findOrFail($id);
 
         $rapat = $voting->rapat;
-        $totalUndangan = $rapat ? $rapat->anggotaRapats->count() : 0;
-        $totalHadir = $rapat ? $rapat->anggotaRapats->filter(function ($a) {
-            return strtolower((string) $a->status_kehadiran) === 'hadir' || ! is_null($a->waktu_presensi);
-        })->count() : 0;
+        $kuorum = $this->kuorumPayload($rapat);
 
         $totalSuara = (int) $voting->total_suara;
-        $persentaseKehadiran = $totalUndangan > 0 ? round(($totalHadir / $totalUndangan) * 100, 2) : 0;
-        $kuorumTerpenuhi = $totalUndangan > 0 ? ($totalHadir > ($totalUndangan / 2)) : ($totalSuara > 0);
-
         $rekapitulasi = $voting->hasil_rekap;
-        $opsiTerbanyak = collect($rekapitulasi)->sortByDesc('jumlah_suara')->first();
-        $keputusanSidang = ($totalSuara > 0 && $opsiTerbanyak) ? $opsiTerbanyak['nama_opsi'] : null;
+        $teratas = collect($rekapitulasi)->sortByDesc('jumlah_suara')->first();
+        $maxSuara = (int) collect($rekapitulasi)->max('jumlah_suara');
+        $teratasSeri = $totalSuara > 0 && $maxSuara > 0
+            ? collect($rekapitulasi)->filter(fn ($item) => (int) $item['jumlah_suara'] === $maxSuara)
+                ->pluck('nama_opsi')->values()->all()
+            : [];
+        $seri = count($teratasSeri) > 1;
+        $opsiSeri = $seri ? $teratasSeri : [];
+
+        $keputusanSidang = (! $seri && $totalSuara > 0 && $kuorum['is_kuorum'] && $teratas)
+            ? $teratas['nama_opsi'] : null;
+        $keputusanAlasan = ! $kuorum['is_kuorum']
+            ? 'kuorum_belum_terpenuhi'
+            : ($totalSuara === 0 ? 'tidak_ada_suara' : ($seri ? 'seri' : null));
 
         return response()->json([
             'voting' => $voting,
             'rapat' => $rapat,
             'kuorum' => [
-                'total_undangan' => $totalUndangan,
-                'total_hadir' => $totalHadir,
+                'total_undangan' => $kuorum['total_invited'],
+                'total_hadir' => $kuorum['present_count'],
                 'total_suara' => $totalSuara,
-                'persentase_kehadiran' => $persentaseKehadiran,
-                'kuorum_terpenuhi' => $kuorumTerpenuhi,
+                'persentase_kehadiran' => $kuorum['present_percentage'],
+                'kuorum_terpenuhi' => $kuorum['is_kuorum'],
+                'total_invited' => $kuorum['total_invited'],
+                'present_count' => $kuorum['present_count'],
+                'izin_count' => $kuorum['izin_count'],
+                'tidak_hadir_count' => $kuorum['tidak_hadir_count'],
+                'menunggu_count' => $kuorum['menunggu_count'],
+                'kuorum_min_persen' => $kuorum['kuorum_min_persen'],
+                'ambang_kuorum' => $kuorum['ambang_kuorum'],
+                'present_percentage' => $kuorum['present_percentage'],
+                'is_kuorum' => $kuorum['is_kuorum'],
+                'status_kuorum_label' => $kuorum['status_kuorum_label'],
+                'is_presensi_open' => $kuorum['is_presensi_open'],
+                'is_kuorum_locked' => $kuorum['is_kuorum_locked'],
             ],
             'rekapitulasi' => $rekapitulasi,
             'total_suara' => $totalSuara,
-            'opsi_terbanyak' => $opsiTerbanyak,
+            'opsi_terbanyak' => $seri ? null : $teratas,
             'keputusan_sidang' => $keputusanSidang,
+            'keputusan_alasan' => $keputusanAlasan,
+            'seri' => $seri,
+            'opsi_seri' => $opsiSeri,
         ]);
     }
 
@@ -249,6 +337,7 @@ class VotingController extends CrudController
     #[OA\Put(
         path: '/voting/{id}',
         summary: 'Perbarui Sesi Voting',
+        description: 'Memperbarui materi sesi yang masih draft kosong dan belum dibuka. Field status DITOLAK seluruhnya lewat PUT (termasuk nilai null) - gunakan POST /voting/{id}/buka atau POST /voting/{id}/tutup. Interval waktu divalidasi terhadap nilai tersimpan: waktu_selesai harus setelah waktu_mulai.',
         tags: ['Voting'],
         security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
@@ -257,7 +346,10 @@ class VotingController extends CrudController
                 properties: [
                     new OA\Property(property: 'judul_voting', type: 'string'),
                     new OA\Property(property: 'deskripsi', type: 'string'),
-                    new OA\Property(property: 'status', type: 'string', enum: ['draft', 'dibuka', 'ditutup'])
+                    new OA\Property(property: 'id_rapat', type: 'integer'),
+                    new OA\Property(property: 'waktu_mulai', type: 'string', format: 'date-time', nullable: true),
+                    new OA\Property(property: 'waktu_selesai', type: 'string', format: 'date-time', nullable: true),
+                    new OA\Property(property: 'opsi', type: 'array', items: new OA\Items(type: 'string'))
                 ]
             )
         ),
@@ -265,34 +357,56 @@ class VotingController extends CrudController
             new OA\Response(response: 200, description: 'Data voting berhasil diperbarui'),
             new OA\Response(response: 401, description: 'Belum terautentikasi'),
             new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
-            new OA\Response(response: 404, description: 'Data tidak ditemukan')
+            new OA\Response(response: 404, description: 'Data tidak ditemukan'),
+            new OA\Response(response: 422, description: 'Field status dikirim lewat PUT, sesi sudah pernah dibuka/berisi suara, atau interval waktu tidak valid')
         ]
     )]
     public function update(Request $request, $id)
     {
-        return parent::update($request, $id);
+        return Voting::writeLocked(function () use ($request, $id) {
+            $voting = Voting::whereKey($id)->lockForUpdate()->firstOrFail();
+            abort_if(array_key_exists('status', $request->all()), 422, 'Gunakan buka/tutup.');
+            $voting->assertEditable();
+            $data = $request->validate($this->rules((int) $id));
+            $start = $data['waktu_mulai'] ?? $voting->waktu_mulai;
+            $end = $data['waktu_selesai'] ?? $voting->waktu_selesai;
+            abort_if($start && $end && \Illuminate\Support\Carbon::parse($end)->lessThanOrEqualTo($start), 422);
+            $voting->update(Arr::except($data, ['opsi']));
+            if (array_key_exists('opsi', $data)) {
+                $voting->opsiVotings()->delete();
+                foreach ($data['opsi'] ?? [] as $name) {
+                    $voting->opsiVotings()->create(['nama_opsi' => $name]);
+                }
+            }
+
+            return $voting->fresh($this->with);
+        });
     }
 
     #[OA\Delete(
         path: '/voting/{id}',
-        summary: 'Hapus Sesi Voting',
+        summary: 'Hapus Sesi Voting (hanya draft kosong)',
+        description: 'Hanya sesi draft yang belum pernah dibuka dan belum memiliki suara yang boleh dihapus. Sesi tertutup atau bersuara dipertahankan permanen; permintaan hapus ditolak 422 tanpa mengubah ballot.',
         tags: ['Voting'],
         security: [['bearerAuth' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
         responses: [
-            new OA\Response(response: 204, description: 'Voting berhasil dihapus'),
+            new OA\Response(response: 204, description: 'Draft kosong berhasil dihapus'),
             new OA\Response(response: 401, description: 'Belum terautentikasi'),
             new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
-            new OA\Response(response: 404, description: 'Data tidak ditemukan')
+            new OA\Response(response: 404, description: 'Data tidak ditemukan'),
+            new OA\Response(response: 422, description: 'Sesi tertutup, sudah pernah dibuka, atau memiliki suara; retensi wajib')
         ]
     )]
     public function destroy($id)
     {
-        $voting = Voting::findOrFail($id);
-        \App\Models\SuaraVoting::where('id_voting', $voting->id_voting)->delete();
-        \App\Models\OpsiVoting::where('id_voting', $voting->id_voting)->delete();
-        $voting->delete();
+        return Voting::writeLocked(function () use ($id) {
+            $voting = Voting::whereKey($id)->lockForUpdate()->firstOrFail();
+            $voting->assertEditable();
+            $voting->opsiVotings()->delete();
+            $voting->delete();
 
-        return response()->noContent();
+            return response()->noContent();
+        });
     }
 }

@@ -17,6 +17,16 @@ class User extends Authenticatable
     protected $fillable = ['nim_nip', 'nama', 'email', 'password', 'role', 'foto_profil'];
     protected $hidden = ['password', 'remember_token'];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $user) {
+            $hasBallots = $user->suaraVotings()->exists()
+                || $user->rapats()->whereHas('votings.suaraVotings')->exists()
+                || $user->kegiatans()->whereHas('rapats.votings.suaraVotings')->exists();
+            abort_if($hasBallots, 422, 'User memiliki riwayat suara voting dan tidak dapat dihapus.');
+        });
+    }
+
     protected function casts(): array
     {
         return ['password' => 'hashed'];

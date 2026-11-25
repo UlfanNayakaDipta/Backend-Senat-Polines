@@ -153,8 +153,15 @@ class VotingTest extends TestCase
         $this->assertEquals('dibuka', $resBuka->json('status'));
         $this->assertNotNull($resBuka->json('waktu_mulai'));
 
-        $user = User::factory()->create(['role' => 'admin']);
-        Sanctum::actingAs($user);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'anggota']);
+        foreach (array_merge([$user], User::factory()->count(2)->create(['role' => 'anggota'])->all()) as $senator) {
+            \App\Models\AnggotaRapat::create([
+                'id_rapat' => $rapat->id_rapat,
+                'id_user' => $senator->id_user,
+                'status_kehadiran' => 'hadir',
+            ]);
+        }
         SuaraVoting::create([
             'id_voting' => $voting->id_voting,
             'id_opsi' => $opsi1->id_opsi,
@@ -173,6 +180,7 @@ class VotingTest extends TestCase
         ]);
         $this->assertEquals('Setuju', $resRekap->json('keputusan_sidang'));
 
+        Sanctum::actingAs($admin);
         $resTutup = $this->postJson("/api/voting/{$voting->id_voting}/tutup");
         $resTutup->assertStatus(200);
         $this->assertEquals('ditutup', $resTutup->json('status'));
@@ -188,7 +196,12 @@ class VotingTest extends TestCase
             'status' => 'ditutup',
         ]);
         $opsi = $voting->opsiVotings()->create(['nama_opsi' => 'Setuju']);
-        $user = User::factory()->create(['role' => 'admin']);
+        $user = User::factory()->create(['role' => 'anggota']);
+        \App\Models\AnggotaRapat::create([
+            'id_rapat' => $rapat->id_rapat,
+            'id_user' => $user->id_user,
+            'status_kehadiran' => 'hadir',
+        ]);
         Sanctum::actingAs($user);
 
         $resClosed = $this->postJson('/api/suara-voting', [

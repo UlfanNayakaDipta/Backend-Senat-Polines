@@ -15,12 +15,12 @@ class PresensiRapatController extends Controller
     #[OA\Get(
         path: '/rapat/active',
         summary: 'Ambil agenda sidang atau rapat senat yang aktif',
-        description: 'Mengambil data agenda rapat yang sedang berlangsung atau dijadwalkan hari ini beserta status kuorum dan QR presensi.',
+        description: 'Mengambil data agenda rapat yang sedang berlangsung atau dijadwalkan hari ini beserta status kuorum. Field token_qr dan kode_sesi HANYA dikembalikan kepada pengguna terautentikasi berperan admin/ketua_senat/sekretaris; untuk pengguna lain kedua key dihilangkan sepenuhnya (bukan null).',
         tags: ['Presensi Rapat'],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Data rapat aktif berhasil dimuat'
+                description: 'Data rapat aktif berhasil dimuat; token_qr/kode_sesi hanya untuk admin/ketua_senat/sekretaris'
             ),
             new OA\Response(
                 response: 404,
@@ -28,6 +28,20 @@ class PresensiRapatController extends Controller
             )
         ]
     )]
+    /**
+     * Token QR dan kode sesi hanya untuk sekretariat/pimpinan yang berwenang.
+     */
+    private function presensiSecrets(Rapat $rapat): array
+    {
+        $user = request()->user() ?? auth('sanctum')->user();
+
+        if (! $user || ! in_array((string) $user->role, ['admin', 'ketua_senat', 'sekretaris'], true)) {
+            return [];
+        }
+
+        return ['token_qr' => $rapat->token_qr, 'kode_sesi' => $rapat->kode_sesi];
+    }
+
     public function getActive(): JsonResponse
     {
         $now = now();
@@ -71,8 +85,7 @@ class PresensiRapatController extends Controller
                 'waktu' => $rapat->waktu,
                 'tempat' => $rapat->tempat,
                 'status' => $rapat->status,
-                'token_qr' => $rapat->token_qr,
-                'kode_sesi' => $rapat->kode_sesi,
+                ...$this->presensiSecrets($rapat),
                 'is_presensi_open' => (bool) $rapat->is_presensi_open,
                 'qr_expires_at' => $rapat->qr_expires_at?->toIso8601String(),
                 'is_kuorum_locked' => (bool) $rapat->is_kuorum_locked,
@@ -84,7 +97,7 @@ class PresensiRapatController extends Controller
     #[OA\Post(
         path: '/rapat/{id}/generate-qr',
         summary: 'Generate QR Code & Kode Sesi Presensi Rapat',
-        description: 'Membuka gerbang presensi rapat dan menghasilkan token QR dinamis serta kode sesi presensi 6 digit.',
+        description: 'Membuka gerbang presensi rapat dan menghasilkan token QR dinamis serta kode sesi presensi 6 digit. Hanya admin/ketua_senat/sekretaris.',
         tags: ['Presensi Rapat'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -101,6 +114,8 @@ class PresensiRapatController extends Controller
                 response: 200,
                 description: 'QR presensi dan kode sesi berhasil diaktifkan'
             ),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
             new OA\Response(
                 response: 404,
                 description: 'Data rapat tidak ditemukan'
@@ -140,7 +155,7 @@ class PresensiRapatController extends Controller
     #[OA\Post(
         path: '/rapat/{id}/freeze-presensi',
         summary: 'Bekukan Presensi dan Kunci Status Kuorum Sidang',
-        description: 'Menutup sesi presensi sehingga QR Code kedaluwarsa dan status kuorum terkunci.',
+        description: 'Menutup sesi presensi sehingga QR Code kedaluwarsa dan status kuorum terkunci. Setelah terkunci, validasi manual presensi ditolak. Hanya admin/ketua_senat/sekretaris.',
         tags: ['Presensi Rapat'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -157,6 +172,8 @@ class PresensiRapatController extends Controller
                 response: 200,
                 description: 'Sesi presensi telah dibekukan'
             ),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
             new OA\Response(
                 response: 404,
                 description: 'Data rapat tidak ditemukan'
@@ -188,18 +205,17 @@ class PresensiRapatController extends Controller
     #[OA\Post(
         path: '/rapat/presensi',
         summary: 'Submit Presensi Kehadiran Anggota Senat',
-        description: 'Mencatat kehadiran anggota senat melalui pemindaian QR code atau input kode sesi.',
+        description: 'Mencatat kehadiran anggota senat melalui pemindaian QR code atau input kode sesi. Identitas diambil dari token; id_user hanya dihormati untuk peran sekretariat. Undangan AnggotaRapat harus sudah ada - endpoint tidak pernah membuat undangan sendiri (self-enrollment mustahil). Bila token_qr/kode_sesi dikirim namun tidak cocok, hasilnya 404 dan TIDAK ada fallback ke id_rapat; id_rapat tanpa kredensial hanya boleh dipakai bila undangan sudah ada.',
         tags: ['Presensi Rapat'],
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['id_user'],
                 properties: [
-                    new OA\Property(property: 'id_user', type: 'integer', example: 1),
+                    new OA\Property(property: 'id_user', type: 'integer', nullable: true, description: 'Hanya berlaku untuk admin/ketua_senat/sekretaris; pengguna biasa selalu tercatat atas namanya sendiri.', example: 1),
                     new OA\Property(property: 'token_qr', type: 'string', example: 'token-polines-rapat-xyz123'),
                     new OA\Property(property: 'kode_sesi', type: 'string', example: 'PLN-789'),
-                    new OA\Property(property: 'id_rapat', type: 'integer', example: 1)
+                    new OA\Property(property: 'id_rapat', type: 'integer', description: 'Hanya dipakai bila token_qr dan kode_sesi sama-sama kosong.', example: 1)
                 ]
             )
         ),
@@ -208,13 +224,15 @@ class PresensiRapatController extends Controller
                 response: 200,
                 description: 'Presensi berhasil dicatat'
             ),
-            new OA\Response(
-                response: 422,
-                description: 'Validasi gagal atau presensi sudah ditutup'
-            ),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Aktor tidak memiliki undangan pada rapat yang ditemukan (self-enrollment dilarang)'),
             new OA\Response(
                 response: 404,
-                description: 'Token QR / Sesi tidak ditemukan'
+                description: 'Token QR / Kode Sesi tidak cocok (tanpa fallback id_rapat)'
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Kredensial kosong tanpa id_rapat, sesi presensi ditutup/dibekukan, atau token kedaluwarsa'
             )
         ]
     )]
@@ -235,7 +253,9 @@ class PresensiRapatController extends Controller
             ? (int) $validated['id_user']
             : (int) $actor->id_user;
 
-        if (empty($validated['token_qr']) && empty($validated['kode_sesi'])) {
+        $hasCredential = ! empty($validated['token_qr']) || ! empty($validated['kode_sesi']);
+
+        if (! $hasCredential && empty($validated['id_rapat'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Mohon sertakan token QR hasil pemindaian atau kode sesi 6-digit.',
@@ -243,13 +263,20 @@ class PresensiRapatController extends Controller
         }
 
         $rapat = null;
-        if (!empty($validated['token_qr'])) {
-            $rapat = Rapat::where('token_qr', trim($validated['token_qr']))->first();
-        }
-        if (!$rapat && !empty($validated['kode_sesi'])) {
-            $rapat = Rapat::where('kode_sesi', strtoupper(trim($validated['kode_sesi'])))->first();
-        }
-        if (!$rapat && !empty($validated['id_rapat'])) {
+        if ($hasCredential) {
+            if (!empty($validated['token_qr'])) {
+                $rapat = Rapat::where('token_qr', trim($validated['token_qr']))->first();
+            }
+            if (!$rapat && !empty($validated['kode_sesi'])) {
+                $rapat = Rapat::where('kode_sesi', strtoupper(trim($validated['kode_sesi'])))->first();
+            }
+            if (! $rapat) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token QR atau Kode Sesi tidak valid / tidak ditemukan pada sistem persidangan.',
+                ], 404);
+            }
+        } elseif (! empty($validated['id_rapat'])) {
             $rapat = Rapat::find($validated['id_rapat']);
         }
 
@@ -281,11 +308,10 @@ class PresensiRapatController extends Controller
             ->first();
 
         if (!$undangan) {
-            $undangan = AnggotaRapat::create([
-                'id_rapat' => $rapat->id_rapat,
-                'id_user' => $user->id_user,
-                'status_kehadiran' => 'menunggu',
-            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak terdaftar sebagai peserta rapat ini. Hubungi Sekretariat untuk undangan presensi.',
+            ], 403);
         }
 
         if (strtolower((string) $undangan->status_kehadiran) === 'hadir') {
@@ -328,7 +354,7 @@ class PresensiRapatController extends Controller
     #[OA\Get(
         path: '/rapat/{id}/live-attendance',
         summary: 'Monitor Kehadiran Sidang dan Kuorum Real-time',
-        description: 'Mengambil daftar anggota rapat beserta status kehadiran (hadir/izin/menunggu), waktu scan, dan persentase kuorum.',
+        description: 'Mengambil daftar anggota rapat beserta status kehadiran (hadir/izin/menunggu), waktu scan, dan persentase kuorum. Field token_qr dan kode_sesi HANYA dikembalikan kepada pengguna terautentikasi berperan admin/ketua_senat/sekretaris; untuk pengguna lain kedua key dihilangkan sepenuhnya (bukan null).',
         tags: ['Presensi Rapat'],
         parameters: [
             new OA\Parameter(
@@ -342,7 +368,7 @@ class PresensiRapatController extends Controller
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Daftar kehadiran real-time'
+                description: 'Daftar kehadiran real-time; token_qr/kode_sesi hanya untuk admin/ketua_senat/sekretaris'
             ),
             new OA\Response(
                 response: 404,
@@ -383,8 +409,7 @@ class PresensiRapatController extends Controller
                 'status' => $rapat->status,
                 'is_presensi_open' => (bool) $rapat->is_presensi_open,
                 'is_kuorum_locked' => (bool) $rapat->is_kuorum_locked,
-                'token_qr' => $rapat->token_qr,
-                'kode_sesi' => $rapat->kode_sesi,
+                ...$this->presensiSecrets($rapat),
                 'kuorum' => $rapat->hitungKuorum(),
                 'anggota' => $daftarAnggota,
             ],
@@ -394,7 +419,7 @@ class PresensiRapatController extends Controller
     #[OA\Put(
         path: '/rapat/{id}/anggota/{id_user}/validasi',
         summary: 'Validasi Manual Kehadiran Anggota oleh Admin/Sekretariat',
-        description: 'Mengubah status presensi anggota secara manual disertai catatan resmi admin.',
+        description: 'Mengubah status presensi anggota secara manual disertai catatan resmi, HANYA oleh admin/ketua_senat/sekretaris. Ditolak 422 bila status kuorum sidang sudah terkunci (is_kuorum_locked).',
         tags: ['Presensi Rapat'],
         security: [['bearerAuth' => []]],
         parameters: [
@@ -437,9 +462,11 @@ class PresensiRapatController extends Controller
                 response: 200,
                 description: 'Status kehadiran berhasil divalidasi manual'
             ),
+            new OA\Response(response: 401, description: 'Belum terautentikasi'),
+            new OA\Response(response: 403, description: 'Akses ditolak (hanya admin/ketua senat/sekretaris)'),
             new OA\Response(
                 response: 422,
-                description: 'Status kehadiran tidak valid'
+                description: 'Status kehadiran tidak valid atau status kuorum sidang sudah terkunci'
             ),
             new OA\Response(
                 response: 404,
@@ -456,6 +483,13 @@ class PresensiRapatController extends Controller
 
         $rapat = Rapat::findOrFail($id);
 
+        if ($rapat->is_kuorum_locked) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Status kuorum sidang telah dikunci. Perubahan presensi tidak lagi diizinkan.',
+            ], 422);
+        }
+
         $undangan = AnggotaRapat::where('id_rapat', $id)
             ->where('id_user', $id_user)
             ->firstOrFail();
@@ -468,7 +502,7 @@ class PresensiRapatController extends Controller
             'waktu_presensi' => $statusBaru === 'hadir' ? ($undangan->waktu_presensi ?: now()) : null,
             'metode_presensi' => 'manual_admin',
             'is_edited_by_admin' => true,
-            'catatan_admin' => $validated['catatan'] ?: ('Divalidasi manual oleh Admin (' . ucfirst($statusSebelumnya ?: 'belum hadir') . ' -> ' . ucfirst($statusBaru) . ')'),
+            'catatan_admin' => ($validated['catatan'] ?? null) ?: ('Divalidasi manual oleh Admin (' . ucfirst($statusSebelumnya ?: 'belum hadir') . ' -> ' . ucfirst($statusBaru) . ')'),
         ]);
 
         return response()->json([

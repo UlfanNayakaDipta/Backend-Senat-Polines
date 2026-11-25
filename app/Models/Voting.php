@@ -11,13 +11,68 @@ class Voting extends Model
     protected $table = 'votings';
     protected $primaryKey = 'id_voting';
     protected $guarded = [];
-    protected $appends = ['total_suara', 'hasil_rekap'];
+    protected $hidden = ['suaraVotings', 'suara_votings'];
+    protected $appends = ['total_suara', 'hasil_rekap', 'kuorum'];
+
+    /**
+     * Blok kuorum kanonik dari satu sumber kebenaran Rapat::hitungKuorum(),
+     * tersedia di semua payload voting (daftar, detail, buka/tutup).
+     */
+    public function getKuorumAttribute(): ?array
+    {
+        return $this->rapat?->hitungKuorum();
+    }
+
+    public function getStatusAttribute(?string $value): ?string
+    {
+        return match (strtolower((string) $value)) {
+            'aktif', 'active', 'open', 'berlangsung' => 'dibuka',
+            'selesai', 'closed' => 'ditutup',
+            default => $value,
+        };
+    }
 
     protected function casts(): array
     {
         return [
             'waktu_mulai' => 'datetime',
             'waktu_selesai' => 'datetime',
+        ];
+    }
+
+    public static function writeLocked(callable $callback): mixed
+    {
+        return \Illuminate\Support\Facades\Cache::store('file')->lock('evoting-write', 30)
+            ->block(10, fn () => \Illuminate\Support\Facades\DB::transaction($callback));
+    }
+
+    public function assertEditable(): void
+    {
+        abort_unless($this->status === 'draft' && ! $this->suaraVotings()->exists(),
+            422, 'Voting tidak dapat diubah.');
+    }
+
+    public function isUsable(): bool
+    {
+        $now = now();
+
+        return $this->status === 'dibuka'
+            && ($this->waktu_mulai === null || $now->greaterThanOrEqualTo($this->waktu_mulai))
+            && ($this->waktu_selesai === null || $now->lessThan($this->waktu_selesai));
+    }
+
+    public function eligibility(User $user): array
+    {
+        $invitations = AnggotaRapat::where('id_rapat', $this->id_rapat)
+            ->where('id_user', $user->id_user)->get();
+        $invited = $invitations->isNotEmpty();
+        $present = $invitations->contains(fn ($invitation) => $invitation->status_kehadiran === 'hadir');
+
+        return [
+            'eligible' => in_array($user->role, ['anggota', 'ketua_senat', 'sekretaris'], true)
+                && $invited && $present && $this->isUsable(),
+            'is_invited' => $invited,
+            'is_present' => $present,
         ];
     }
 

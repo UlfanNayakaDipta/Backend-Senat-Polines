@@ -39,6 +39,10 @@ use App\Http\Controllers\ChatbotController;
 |--------------------------------------------------------------------------
 */
 // Endpoint publik untuk frontend (direktori komisi, hanya baca)
+Route::get('landing-stats', \App\Http\Controllers\LandingStatsController::class);
+Route::get('landing-news', \App\Http\Controllers\LandingNewsController::class);
+Route::get('public-news', [\App\Http\Controllers\PublicNewsController::class, 'index']);
+Route::get('public-news/{slug_or_id}', [\App\Http\Controllers\PublicNewsController::class, 'show']);
 Route::get('committees', [KomisiController::class, 'publicCommittees']);
 
 // Authentication
@@ -113,9 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Presensi kehadiran rapat
     Route::post('rapat/presensi', [PresensiRapatController::class, 'submitPresensi']);
-    Route::post('rapat/{id}/generate-qr', [PresensiRapatController::class, 'generateQr']);
-    Route::post('rapat/{id}/freeze-presensi', [PresensiRapatController::class, 'freezePresensi']);
-    Route::put('rapat/{id}/anggota/{id_user}/validasi', [PresensiRapatController::class, 'validasiManual']);
+
 
     // Workspace rapat (catatan pribadi, lampiran, berbagi materi)
     Route::get('rapat/{id_rapat}/catatan', [RapatCatatanController::class, 'index']);
@@ -131,6 +133,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('suara-voting', [SuaraVotingController::class, 'index'])
         ->middleware('role:admin,ketua_senat,sekretaris');
     Route::post('suara-voting', [SuaraVotingController::class, 'store']);
+    Route::match(['put', 'patch', 'delete'], 'suara-voting/{id}', fn () => abort(405));
+    Route::get('voting/{id}/my-ballot', [SuaraVotingController::class, 'myBallot']);
 
     /*
     |----------------------------------------------------------------------
@@ -147,7 +151,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('opsi-voting', [OpsiVotingController::class, 'store']);
         Route::put('opsi-voting/{opsi_voting}', [OpsiVotingController::class, 'update']);
         Route::delete('opsi-voting/{opsi_voting}', [OpsiVotingController::class, 'destroy']);
-        Route::delete('suara-voting/{suara_voting}', [SuaraVotingController::class, 'destroy']);
+
+        // Manajemen Presensi Sidang (QR, freeze kuorum, validasi manual)
+        Route::post('rapat/{id}/generate-qr', [PresensiRapatController::class, 'generateQr']);
+        Route::post('rapat/{id}/freeze-presensi', [PresensiRapatController::class, 'freezePresensi']);
+        Route::put('rapat/{id}/anggota/{id_user}/validasi', [PresensiRapatController::class, 'validasiManual']);
 
         // Manajemen Sidang & Risalah
         Route::post('rapat', [RapatController::class, 'store']);
