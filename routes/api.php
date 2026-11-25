@@ -39,6 +39,10 @@ use App\Http\Controllers\ChatbotController;
 |--------------------------------------------------------------------------
 */
 // Endpoint publik untuk frontend (direktori komisi, hanya baca)
+Route::get('landing-stats', \App\Http\Controllers\LandingStatsController::class);
+Route::get('landing-news', \App\Http\Controllers\LandingNewsController::class);
+Route::get('public-news', [\App\Http\Controllers\PublicNewsController::class, 'index']);
+Route::get('public-news/{slug_or_id}', [\App\Http\Controllers\PublicNewsController::class, 'show']);
 Route::get('committees', [KomisiController::class, 'publicCommittees']);
 
 // Authentication
